@@ -11,6 +11,7 @@
 
     <modules>
         <module>wallet-app</module>
+        <module>core</module>
     </modules>
 
 
