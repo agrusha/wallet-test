@@ -1,0 +1,27 @@
+# tmp files
+*~
+.DS_Store
+
+# maven artifacts
+target
+build
+
+# gradle artifacts
+build
+.gradle
+
+# intellij idea
+.idea
+*.iml
+out
+
+# gradle
+.gradle
+
+# generated sources
+gen
+gen-external-apklibs
+local.properties
+
+# libs
+lib
