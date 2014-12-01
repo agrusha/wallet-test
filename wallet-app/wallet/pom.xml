@@ -199,6 +199,44 @@
                 <artifactId>android-maven-plugin</artifactId>
                 <version>3.8.0</version>
                 <configuration>
+
+                    <!-- reasonable static setup -->
+                    <extractDuplicates>true</extractDuplicates>
+                    <undeployBeforeDeploy>true</undeployBeforeDeploy>
+
+                    <!-- dex settings -->
+                    <dex>
+                        <preDex>true</preDex>
+                        <optimize>${project.build.release}</optimize>
+                    </dex>
+                    <!-- lint settings -->
+                    <lint>
+                        <skip>true</skip>
+                        <!-- we can't use lint because we have a gradle project now ${project.build.release} -->
+                        <failOnError>true</failOnError>
+                        <ignoreWarnings>false</ignoreWarnings>
+                        <showAll>true</showAll>
+                        <enableXml>true</enableXml>
+                        <enableHtml>true</enableHtml>
+                        <enableLibraries>false</enableLibraries>
+                        <disableSourceLines>false</disableSourceLines>
+                        <enableSources>true</enableSources>
+                    </lint>
+                    <proguard>
+                        <!-- TODO: when releasing application we might want to strip some code -->
+                        <skip>false</skip>
+                        <config>proguard.cfg</config>
+                        <configs>
+                            <config>${env.ANDROID_HOME}/tools/proguard/proguard-android.txt</config>
+                        </configs>
+                        <jvmArguments>
+                            <jvmArgument>-Xms256m</jvmArgument>
+                            <jvmArgument>-Xmx512m</jvmArgument>
+                        </jvmArguments>
+                        <filterMavenDescriptor>true</filterMavenDescriptor>
+                        <filterManifest>true</filterManifest>
+                    </proguard>
+
                     <excludeJarResources>
                         <excludeJarResource>.*\.jar$</excludeJarResource>
                     </excludeJarResources>
@@ -209,6 +247,16 @@
                         <debug>both</debug>
                     </sign>
                 </configuration>
+                <executions>
+                    <!-- enable lint analyzer -->
+                    <execution>
+                        <id>lint</id>
+                        <goals>
+                            <goal>lint</goal>
+                        </goals>
+                        <phase>test-compile</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -280,31 +328,6 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-eclipse-plugin</artifactId>-->
-                <!--<configuration>-->
-                    <!--<downloadSources>true</downloadSources>-->
-                    <!--<downloadJavadocs>false</downloadJavadocs>-->
-                    <!--<additionalProjectnatures>-->
-                        <!--<projectnature>com.android.ide.eclipse.adt.AndroidNature</projectnature>-->
-                    <!--</additionalProjectnatures>-->
-                    <!--<additionalBuildcommands>-->
-                        <!--<buildcommand>com.android.ide.eclipse.adt.ResourceManagerBuilder</buildcommand>-->
-                        <!--<buildcommand>com.android.ide.eclipse.adt.PreCompilerBuilder</buildcommand>-->
-                        <!--<buildcommand>com.android.ide.eclipse.adt.ApkBuilder</buildcommand>-->
-                    <!--</additionalBuildcommands>-->
-                    <!--<classpathContainers>-->
-                        <!--<classpathContainer>com.android.ide.eclipse.adt.ANDROID_FRAMEWORK</classpathContainer>-->
-                        <!--&lt;!&ndash; This is a workaround: we do not want JRE_CONTAINER, however if we remove it, it will be automatically added, and-->
-                            <!--placed first. So we add it in the second position, so that the project is recognized as an Android project. &ndash;&gt;-->
-                        <!--<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>-->
-                    <!--</classpathContainers>-->
-                    <!--<excludes>-->
-                        <!--<exclude>android:android</exclude>-->
-                    <!--</excludes>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
         </plugins>
     </build>
 
