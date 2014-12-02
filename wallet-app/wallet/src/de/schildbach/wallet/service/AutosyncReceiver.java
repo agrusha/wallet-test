@@ -17,37 +17,33 @@
 
 package de.schildbach.wallet.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import de.schildbach.wallet.WalletApplication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Andreas Schildbach
  */
-public class AutosyncReceiver extends BroadcastReceiver
-{
-	private static final Logger log = LoggerFactory.getLogger(AutosyncReceiver.class);
+public class AutosyncReceiver extends BroadcastReceiver {
+    private static final Logger log = LoggerFactory.getLogger(AutosyncReceiver.class);
 
-	@Override
-	public void onReceive(final Context context, final Intent intent)
-	{
-		log.info("got broadcast: " + intent);
+    @Override
+    public void onReceive(final Context context, final Intent intent) {
+        log.info("got broadcast: " + intent);
 
-		final boolean bootCompleted = Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction());
-		final boolean packageReplaced = Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction());
+        final boolean bootCompleted = Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction());
+        final boolean packageReplaced = Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction());
 
-		if (packageReplaced || bootCompleted)
-		{
-			// make sure wallet is upgraded to HD
-			if (packageReplaced)
-				UpgradeWalletService.startUpgrade(context);
+        if (packageReplaced || bootCompleted) {
+            // make sure wallet is upgraded to HD
+            if (packageReplaced)
+                UpgradeWalletService.startUpgrade(context);
 
-			// make sure there is always an alarm scheduled
-			WalletApplication.scheduleStartBlockchainService(context);
-		}
-	}
+            // make sure there is always an alarm scheduled
+            WalletApplication.scheduleStartBlockchainService(context);
+        }
+    }
 }

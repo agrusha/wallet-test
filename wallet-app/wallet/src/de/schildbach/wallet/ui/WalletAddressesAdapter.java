@@ -17,18 +17,6 @@
 
 package de.schildbach.wallet.ui;
 
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Wallet;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.text.format.DateUtils;
@@ -41,109 +29,105 @@ import de.schildbach.wallet.AddressBookProvider;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Wallet;
+
+import javax.annotation.Nonnull;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Andreas Schildbach
  */
-public class WalletAddressesAdapter extends BaseAdapter
-{
-	private final Context context;
-	private final Wallet wallet;
-	private final DateFormat dateFormat;
-	private final int colorSignificant;
-	private final int colorInsignificant;
-	private final int colorLessSignificant;
-	private final LayoutInflater inflater;
+public class WalletAddressesAdapter extends BaseAdapter {
+    private final Context context;
+    private final Wallet wallet;
+    private final DateFormat dateFormat;
+    private final int colorSignificant;
+    private final int colorInsignificant;
+    private final int colorLessSignificant;
+    private final LayoutInflater inflater;
 
-	private final List<ECKey> keys = new ArrayList<ECKey>();
+    private final List<ECKey> keys = new ArrayList<ECKey>();
 
-	public WalletAddressesAdapter(final Context context, @Nonnull final Wallet wallet)
-	{
-		final Resources res = context.getResources();
+    public WalletAddressesAdapter(final Context context, @Nonnull final Wallet wallet) {
+        final Resources res = context.getResources();
 
-		this.context = context;
-		this.wallet = wallet;
-		dateFormat = android.text.format.DateFormat.getDateFormat(context);
-		colorSignificant = res.getColor(R.color.fg_significant);
-		colorInsignificant = res.getColor(R.color.fg_insignificant);
-		colorLessSignificant = res.getColor(R.color.fg_less_significant);
-		inflater = LayoutInflater.from(context);
-	}
+        this.context = context;
+        this.wallet = wallet;
+        dateFormat = android.text.format.DateFormat.getDateFormat(context);
+        colorSignificant = res.getColor(R.color.fg_significant);
+        colorInsignificant = res.getColor(R.color.fg_insignificant);
+        colorLessSignificant = res.getColor(R.color.fg_less_significant);
+        inflater = LayoutInflater.from(context);
+    }
 
-	public void replace(@Nonnull final Collection<ECKey> keys)
-	{
-		this.keys.clear();
-		this.keys.addAll(keys);
+    public void replace(@Nonnull final Collection<ECKey> keys) {
+        this.keys.clear();
+        this.keys.addAll(keys);
 
-		notifyDataSetChanged();
-	}
+        notifyDataSetChanged();
+    }
 
-	@Override
-	public int getCount()
-	{
-		return keys.size();
-	}
+    @Override
+    public int getCount() {
+        return keys.size();
+    }
 
-	@Override
-	public Object getItem(final int position)
-	{
-		return keys.get(position);
-	}
+    @Override
+    public Object getItem(final int position) {
+        return keys.get(position);
+    }
 
-	@Override
-	public long getItemId(final int position)
-	{
-		return keys.get(position).hashCode();
-	}
+    @Override
+    public long getItemId(final int position) {
+        return keys.get(position).hashCode();
+    }
 
-	@Override
-	public boolean hasStableIds()
-	{
-		return true;
-	}
+    @Override
+    public boolean hasStableIds() {
+        return true;
+    }
 
-	@Override
-	public View getView(final int position, View row, final ViewGroup parent)
-	{
-		final ECKey key = (ECKey) getItem(position);
-		final Address address = key.toAddress(Constants.NETWORK_PARAMETERS);
-		final boolean isRotateKey = wallet.isKeyRotating(key);
+    @Override
+    public View getView(final int position, View row, final ViewGroup parent) {
+        final ECKey key = (ECKey) getItem(position);
+        final Address address = key.toAddress(Constants.NETWORK_PARAMETERS);
+        final boolean isRotateKey = wallet.isKeyRotating(key);
 
-		if (row == null)
-			row = inflater.inflate(R.layout.address_book_row, null);
+        if (row == null)
+            row = inflater.inflate(R.layout.address_book_row, null);
 
-		final TextView addressView = (TextView) row.findViewById(R.id.address_book_row_address);
-		addressView.setText(WalletUtils.formatAddress(address, Constants.ADDRESS_FORMAT_GROUP_SIZE, Constants.ADDRESS_FORMAT_LINE_SIZE));
-		addressView.setTextColor(isRotateKey ? colorInsignificant : colorSignificant);
+        final TextView addressView = (TextView) row.findViewById(R.id.address_book_row_address);
+        addressView.setText(WalletUtils.formatAddress(address, Constants.ADDRESS_FORMAT_GROUP_SIZE, Constants.ADDRESS_FORMAT_LINE_SIZE));
+        addressView.setTextColor(isRotateKey ? colorInsignificant : colorSignificant);
 
-		final TextView labelView = (TextView) row.findViewById(R.id.address_book_row_label);
-		final String label = AddressBookProvider.resolveLabel(context, address.toString());
-		if (label != null)
-		{
-			labelView.setText(label);
-			labelView.setTextColor(isRotateKey ? colorInsignificant : colorLessSignificant);
-		}
-		else
-		{
-			labelView.setText(R.string.address_unlabeled);
-			labelView.setTextColor(colorInsignificant);
-		}
+        final TextView labelView = (TextView) row.findViewById(R.id.address_book_row_label);
+        final String label = AddressBookProvider.resolveLabel(context, address.toString());
+        if (label != null) {
+            labelView.setText(label);
+            labelView.setTextColor(isRotateKey ? colorInsignificant : colorLessSignificant);
+        } else {
+            labelView.setText(R.string.address_unlabeled);
+            labelView.setTextColor(colorInsignificant);
+        }
 
-		final TextView createdView = (TextView) row.findViewById(R.id.address_book_row_created);
-		final long createdMs = key.getCreationTimeSeconds() * DateUtils.SECOND_IN_MILLIS;
-		if (createdMs != 0)
-		{
-			createdView.setText(dateFormat.format(new Date(createdMs)));
-			createdView.setVisibility(View.VISIBLE);
-		}
-		else
-		{
-			createdView.setVisibility(View.GONE);
-		}
+        final TextView createdView = (TextView) row.findViewById(R.id.address_book_row_created);
+        final long createdMs = key.getCreationTimeSeconds() * DateUtils.SECOND_IN_MILLIS;
+        if (createdMs != 0) {
+            createdView.setText(dateFormat.format(new Date(createdMs)));
+            createdView.setVisibility(View.VISIBLE);
+        } else {
+            createdView.setVisibility(View.GONE);
+        }
 
-		final TextView messageView = (TextView) row.findViewById(R.id.address_book_row_message);
-		messageView.setVisibility(isRotateKey ? View.VISIBLE : View.GONE);
+        final TextView messageView = (TextView) row.findViewById(R.id.address_book_row_message);
+        messageView.setVisibility(isRotateKey ? View.VISIBLE : View.GONE);
 
-		return row;
-	}
+        return row;
+    }
 }

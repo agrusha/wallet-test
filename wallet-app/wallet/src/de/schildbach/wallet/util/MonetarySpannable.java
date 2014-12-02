@@ -17,103 +17,91 @@
 
 package de.schildbach.wallet.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.regex.Matcher;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.bitcoinj.core.Monetary;
-import org.bitcoinj.utils.MonetaryFormat;
-
 import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import de.schildbach.wallet.Constants;
+import org.bitcoinj.core.Monetary;
+import org.bitcoinj.utils.MonetaryFormat;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.regex.Matcher;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * @author Andreas Schildbach
  */
-public final class MonetarySpannable extends SpannableString
-{
-	public MonetarySpannable(final MonetaryFormat format, final boolean signed, @Nullable final Monetary monetary)
-	{
-		super(format(format, signed, monetary));
-	}
+public final class MonetarySpannable extends SpannableString {
+    public MonetarySpannable(final MonetaryFormat format, final boolean signed, @Nullable final Monetary monetary) {
+        super(format(format, signed, monetary));
+    }
 
-	public MonetarySpannable(final MonetaryFormat format, @Nullable final Monetary monetary)
-	{
-		super(format(format, false, monetary));
-	}
+    public MonetarySpannable(final MonetaryFormat format, @Nullable final Monetary monetary) {
+        super(format(format, false, monetary));
+    }
 
-	private static CharSequence format(final MonetaryFormat format, final boolean signed, final Monetary monetary)
-	{
-		if (monetary == null)
-			return "";
+    private static CharSequence format(final MonetaryFormat format, final boolean signed, final Monetary monetary) {
+        if (monetary == null)
+            return "";
 
-		checkArgument(monetary.signum() >= 0 || signed);
+        checkArgument(monetary.signum() >= 0 || signed);
 
-		if (signed)
-			return format.negativeSign(Constants.CURRENCY_MINUS_SIGN).positiveSign(Constants.CURRENCY_PLUS_SIGN).format(monetary);
-		else
-			return format.format(monetary);
-	}
+        if (signed)
+            return format.negativeSign(Constants.CURRENCY_MINUS_SIGN).positiveSign(Constants.CURRENCY_PLUS_SIGN).format(monetary);
+        else
+            return format.format(monetary);
+    }
 
-	public MonetarySpannable applyMarkup(@Nullable final Object prefixSpan1, @Nullable final Object prefixSpan2,
-			@Nullable final Object insignificantSpan)
-	{
-		applyMarkup(this, prefixSpan1, prefixSpan2, BOLD_SPAN, insignificantSpan);
-		return this;
-	}
+    public MonetarySpannable applyMarkup(@Nullable final Object prefixSpan1, @Nullable final Object prefixSpan2,
+                                         @Nullable final Object insignificantSpan) {
+        applyMarkup(this, prefixSpan1, prefixSpan2, BOLD_SPAN, insignificantSpan);
+        return this;
+    }
 
-	public static final Object BOLD_SPAN = new StyleSpan(Typeface.BOLD);
-	public static final RelativeSizeSpan SMALLER_SPAN = new RelativeSizeSpan(0.85f);
+    public static final Object BOLD_SPAN = new StyleSpan(Typeface.BOLD);
+    public static final RelativeSizeSpan SMALLER_SPAN = new RelativeSizeSpan(0.85f);
 
-	public static void applyMarkup(@Nonnull final Spannable spannable, @Nullable final Object prefixSpan1, @Nullable final Object prefixSpan2,
-			@Nullable final Object significantSpan, @Nullable final Object insignificantSpan)
-	{
-		if (prefixSpan1 != null)
-			spannable.removeSpan(prefixSpan1);
-		if (prefixSpan2 != null)
-			spannable.removeSpan(prefixSpan2);
-		if (significantSpan != null)
-			spannable.removeSpan(significantSpan);
-		if (insignificantSpan != null)
-			spannable.removeSpan(insignificantSpan);
+    public static void applyMarkup(@Nonnull final Spannable spannable, @Nullable final Object prefixSpan1, @Nullable final Object prefixSpan2,
+                                   @Nullable final Object significantSpan, @Nullable final Object insignificantSpan) {
+        if (prefixSpan1 != null)
+            spannable.removeSpan(prefixSpan1);
+        if (prefixSpan2 != null)
+            spannable.removeSpan(prefixSpan2);
+        if (significantSpan != null)
+            spannable.removeSpan(significantSpan);
+        if (insignificantSpan != null)
+            spannable.removeSpan(insignificantSpan);
 
-		final Matcher m = Formats.PATTERN_MONETARY_SPANNABLE.matcher(spannable);
-		if (m.find())
-		{
-			int i = 0;
+        final Matcher m = Formats.PATTERN_MONETARY_SPANNABLE.matcher(spannable);
+        if (m.find()) {
+            int i = 0;
 
-			if (m.group(Formats.PATTERN_GROUP_PREFIX) != null)
-			{
-				final int end = m.end(Formats.PATTERN_GROUP_PREFIX);
-				if (prefixSpan1 != null)
-					spannable.setSpan(prefixSpan1, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				if (prefixSpan2 != null)
-					spannable.setSpan(prefixSpan2, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				i = end;
-			}
+            if (m.group(Formats.PATTERN_GROUP_PREFIX) != null) {
+                final int end = m.end(Formats.PATTERN_GROUP_PREFIX);
+                if (prefixSpan1 != null)
+                    spannable.setSpan(prefixSpan1, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (prefixSpan2 != null)
+                    spannable.setSpan(prefixSpan2, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                i = end;
+            }
 
-			if (m.group(Formats.PATTERN_GROUP_SIGNIFICANT) != null)
-			{
-				final int end = m.end(Formats.PATTERN_GROUP_SIGNIFICANT);
-				if (significantSpan != null)
-					spannable.setSpan(significantSpan, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				i = end;
-			}
+            if (m.group(Formats.PATTERN_GROUP_SIGNIFICANT) != null) {
+                final int end = m.end(Formats.PATTERN_GROUP_SIGNIFICANT);
+                if (significantSpan != null)
+                    spannable.setSpan(significantSpan, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                i = end;
+            }
 
-			if (m.group(Formats.PATTERN_GROUP_INSIGNIFICANT) != null)
-			{
-				final int end = m.end(Formats.PATTERN_GROUP_INSIGNIFICANT);
-				if (insignificantSpan != null)
-					spannable.setSpan(insignificantSpan, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				i = end;
-			}
-		}
-	}
+            if (m.group(Formats.PATTERN_GROUP_INSIGNIFICANT) != null) {
+                final int end = m.end(Formats.PATTERN_GROUP_INSIGNIFICANT);
+                if (insignificantSpan != null)
+                    spannable.setSpan(insignificantSpan, i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                i = end;
+            }
+        }
+    }
 }

@@ -17,8 +17,6 @@
 
 package de.schildbach.wallet.ui;
 
-import javax.annotation.CheckForNull;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -27,47 +25,42 @@ import android.os.IBinder;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
 
+import javax.annotation.CheckForNull;
+
 /**
  * @author Andreas Schildbach
  */
-public abstract class AbstractBindServiceActivity extends AbstractWalletActivity
-{
-	@CheckForNull
-	private BlockchainService blockchainService;
+public abstract class AbstractBindServiceActivity extends AbstractWalletActivity {
+    @CheckForNull
+    private BlockchainService blockchainService;
 
-	private final ServiceConnection serviceConnection = new ServiceConnection()
-	{
-		@Override
-		public void onServiceConnected(final ComponentName name, final IBinder binder)
-		{
-			blockchainService = ((BlockchainServiceImpl.LocalBinder) binder).getService();
-		}
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(final ComponentName name, final IBinder binder) {
+            blockchainService = ((BlockchainServiceImpl.LocalBinder) binder).getService();
+        }
 
-		@Override
-		public void onServiceDisconnected(final ComponentName name)
-		{
-			blockchainService = null;
-		}
-	};
+        @Override
+        public void onServiceDisconnected(final ComponentName name) {
+            blockchainService = null;
+        }
+    };
 
-	@Override
-	protected void onResume()
-	{
-		super.onResume();
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-		bindService(new Intent(this, BlockchainServiceImpl.class), serviceConnection, Context.BIND_AUTO_CREATE);
-	}
+        bindService(new Intent(this, BlockchainServiceImpl.class), serviceConnection, Context.BIND_AUTO_CREATE);
+    }
 
-	@Override
-	protected void onPause()
-	{
-		unbindService(serviceConnection);
+    @Override
+    protected void onPause() {
+        unbindService(serviceConnection);
 
-		super.onPause();
-	}
+        super.onPause();
+    }
 
-	protected BlockchainService getBlockchainService()
-	{
-		return blockchainService;
-	}
+    protected BlockchainService getBlockchainService() {
+        return blockchainService;
+    }
 }

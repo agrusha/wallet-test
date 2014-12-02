@@ -15,9 +15,9 @@ public class BlockchainServiceControllerImpl implements BlockchainServiceControl
         this.applicationContext = context;
         this.blockchainServiceIntent = new Intent(context, BlockchainServiceImpl.class);
         this.blockchainServiceCancelCoinsReceivedIntent = new Intent(BlockchainService.ACTION_CANCEL_COINS_RECEIVED,
-                                                                     null, context, BlockchainServiceImpl.class);
+                null, context, BlockchainServiceImpl.class);
         this.blockchainServiceResetBlockchainIntent = new Intent(BlockchainService.ACTION_RESET_BLOCKCHAIN, null,
-                                                                 context, BlockchainService.class);
+                context, BlockchainService.class);
     }
 
     @Override

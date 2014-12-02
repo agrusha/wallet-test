@@ -17,48 +17,40 @@
 
 package de.schildbach.wallet.ui.send;
 
-import javax.annotation.Nonnull;
-
+import android.os.Handler;
+import android.os.Looper;
 import org.bitcoinj.crypto.KeyCrypter;
 import org.spongycastle.crypto.params.KeyParameter;
 
-import android.os.Handler;
-import android.os.Looper;
+import javax.annotation.Nonnull;
 
 /**
  * @author Andreas Schildbach
  */
-public abstract class DeriveKeyTask
-{
-	private final Handler backgroundHandler;
-	private final Handler callbackHandler;
+public abstract class DeriveKeyTask {
+    private final Handler backgroundHandler;
+    private final Handler callbackHandler;
 
-	public DeriveKeyTask(@Nonnull final Handler backgroundHandler)
-	{
-		this.backgroundHandler = backgroundHandler;
-		this.callbackHandler = new Handler(Looper.myLooper());
-	}
+    public DeriveKeyTask(@Nonnull final Handler backgroundHandler) {
+        this.backgroundHandler = backgroundHandler;
+        this.callbackHandler = new Handler(Looper.myLooper());
+    }
 
-	public final void deriveKey(@Nonnull final KeyCrypter keyCrypter, @Nonnull final String password)
-	{
-		backgroundHandler.post(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				final KeyParameter encryptionKey = keyCrypter.deriveKey(password); // takes time
+    public final void deriveKey(@Nonnull final KeyCrypter keyCrypter, @Nonnull final String password) {
+        backgroundHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                final KeyParameter encryptionKey = keyCrypter.deriveKey(password); // takes time
 
-				callbackHandler.post(new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						onSuccess(encryptionKey);
-					}
-				});
-			}
-		});
-	}
+                callbackHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onSuccess(encryptionKey);
+                    }
+                });
+            }
+        });
+    }
 
-	protected abstract void onSuccess(@Nonnull KeyParameter encryptionKey);
+    protected abstract void onSuccess(@Nonnull KeyParameter encryptionKey);
 }

@@ -17,11 +17,6 @@
 
 package de.schildbach.wallet.ui;
 
-import javax.annotation.Nonnull;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -29,72 +24,67 @@ import android.widget.TextView;
 import android.widget.Toast;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet_test.R;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author Andreas Schildbach
  */
-public abstract class AbstractWalletActivity extends Activity
-{
-	private WalletApplication application;
+public abstract class AbstractWalletActivity extends Activity {
+    private WalletApplication application;
 
-	protected static final Logger log = LoggerFactory.getLogger(AbstractWalletActivity.class);
+    protected static final Logger log = LoggerFactory.getLogger(AbstractWalletActivity.class);
 
-	@Override
-	protected void onCreate(final Bundle savedInstanceState)
-	{
-		application = (WalletApplication) getApplication();
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        application = (WalletApplication) getApplication();
 
-		super.onCreate(savedInstanceState);
-	}
+        super.onCreate(savedInstanceState);
+    }
 
-	protected WalletApplication getWalletApplication()
-	{
-		return application;
-	}
+    protected WalletApplication getWalletApplication() {
+        return application;
+    }
 
-	protected final void toast(@Nonnull final String text, final Object... formatArgs)
-	{
-		toast(text, 0, Toast.LENGTH_SHORT, formatArgs);
-	}
+    protected final void toast(@Nonnull final String text, final Object... formatArgs) {
+        toast(text, 0, Toast.LENGTH_SHORT, formatArgs);
+    }
 
-	protected final void longToast(@Nonnull final String text, final Object... formatArgs)
-	{
-		toast(text, 0, Toast.LENGTH_LONG, formatArgs);
-	}
+    protected final void longToast(@Nonnull final String text, final Object... formatArgs) {
+        toast(text, 0, Toast.LENGTH_LONG, formatArgs);
+    }
 
-	protected final void toast(@Nonnull final String text, final int imageResId, final int duration, final Object... formatArgs)
-	{
-		final View view = getLayoutInflater().inflate(R.layout.transient_notification, null);
-		TextView tv = (TextView) view.findViewById(R.id.transient_notification_text);
-		tv.setText(String.format(text, formatArgs));
-		tv.setCompoundDrawablesWithIntrinsicBounds(imageResId, 0, 0, 0);
+    protected final void toast(@Nonnull final String text, final int imageResId, final int duration, final Object... formatArgs) {
+        final View view = getLayoutInflater().inflate(R.layout.transient_notification, null);
+        TextView tv = (TextView) view.findViewById(R.id.transient_notification_text);
+        tv.setText(String.format(text, formatArgs));
+        tv.setCompoundDrawablesWithIntrinsicBounds(imageResId, 0, 0, 0);
 
-		final Toast toast = new Toast(this);
-		toast.setView(view);
-		toast.setDuration(duration);
-		toast.show();
-	}
+        final Toast toast = new Toast(this);
+        toast.setView(view);
+        toast.setDuration(duration);
+        toast.show();
+    }
 
-	protected final void toast(final int textResId, final Object... formatArgs)
-	{
-		toast(textResId, 0, Toast.LENGTH_SHORT, formatArgs);
-	}
+    protected final void toast(final int textResId, final Object... formatArgs) {
+        toast(textResId, 0, Toast.LENGTH_SHORT, formatArgs);
+    }
 
-	protected final void longToast(final int textResId, final Object... formatArgs)
-	{
-		toast(textResId, 0, Toast.LENGTH_LONG, formatArgs);
-	}
+    protected final void longToast(final int textResId, final Object... formatArgs) {
+        toast(textResId, 0, Toast.LENGTH_LONG, formatArgs);
+    }
 
-	protected final void toast(final int textResId, final int imageResId, final int duration, final Object... formatArgs)
-	{
-		final View view = getLayoutInflater().inflate(R.layout.transient_notification, null);
-		TextView tv = (TextView) view.findViewById(R.id.transient_notification_text);
-		tv.setText(getString(textResId, formatArgs));
-		tv.setCompoundDrawablesWithIntrinsicBounds(imageResId, 0, 0, 0);
+    protected final void toast(final int textResId, final int imageResId, final int duration, final Object... formatArgs) {
+        final View view = getLayoutInflater().inflate(R.layout.transient_notification, null);
+        TextView tv = (TextView) view.findViewById(R.id.transient_notification_text);
+        tv.setText(getString(textResId, formatArgs));
+        tv.setCompoundDrawablesWithIntrinsicBounds(imageResId, 0, 0, 0);
 
-		final Toast toast = new Toast(this);
-		toast.setView(view);
-		toast.setDuration(duration);
-		toast.show();
-	}
+        final Toast toast = new Toast(this);
+        toast.setView(view);
+        toast.setDuration(duration);
+        toast.show();
+    }
 }

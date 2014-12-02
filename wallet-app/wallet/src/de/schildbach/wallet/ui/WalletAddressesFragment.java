@@ -17,37 +17,13 @@
 
 package de.schildbach.wallet.ui;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-
-import org.bitcoinj.core.AbstractWalletEventListener;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Wallet;
-import org.bitcoinj.core.WalletEventListener;
-import org.bitcoinj.uri.BitcoinURI;
-import org.bitcoinj.utils.Threading;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
+import android.content.*;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.ActionMode;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
+import android.view.*;
 import android.widget.BaseAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -59,232 +35,214 @@ import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet.util.WholeStringBuilder;
 import de.schildbach.wallet_test.R;
+import org.bitcoinj.core.*;
+import org.bitcoinj.uri.BitcoinURI;
+import org.bitcoinj.utils.Threading;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * @author Andreas Schildbach
  */
-public final class WalletAddressesFragment extends FancyListFragment
-{
-	private AddressBookActivity activity;
-	private WalletApplication application;
-	private Wallet wallet;
-	private ClipboardManager clipboardManager;
-	private ContentResolver contentResolver;
+public final class WalletAddressesFragment extends FancyListFragment {
+    private AddressBookActivity activity;
+    private WalletApplication application;
+    private Wallet wallet;
+    private ClipboardManager clipboardManager;
+    private ContentResolver contentResolver;
 
-	private WalletAddressesAdapter adapter;
+    private WalletAddressesAdapter adapter;
 
-	private static final Logger log = LoggerFactory.getLogger(WalletAddressesFragment.class);
+    private static final Logger log = LoggerFactory.getLogger(WalletAddressesFragment.class);
 
-	@Override
-	public void onAttach(final Activity activity)
-	{
-		super.onAttach(activity);
+    @Override
+    public void onAttach(final Activity activity) {
+        super.onAttach(activity);
 
-		this.activity = (AddressBookActivity) activity;
-		this.application = (WalletApplication) activity.getApplication();
-		this.wallet = application.getWallet();
-		this.clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-		this.contentResolver = activity.getContentResolver();
-	}
+        this.activity = (AddressBookActivity) activity;
+        this.application = (WalletApplication) activity.getApplication();
+        this.wallet = application.getWallet();
+        this.clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+        this.contentResolver = activity.getContentResolver();
+    }
 
-	@Override
-	public void onCreate(final Bundle savedInstanceState)
-	{
-		super.onCreate(savedInstanceState);
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		setHasOptionsMenu(true);
+        setHasOptionsMenu(true);
 
-		adapter = new WalletAddressesAdapter(activity, wallet);
+        adapter = new WalletAddressesAdapter(activity, wallet);
 
-		setListAdapter(adapter);
-	}
+        setListAdapter(adapter);
+    }
 
-	@Override
-	public void onViewCreated(final View view, final Bundle savedInstanceState)
-	{
-		super.onViewCreated(view, savedInstanceState);
+    @Override
+    public void onViewCreated(final View view, final Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-		setEmptyText(WholeStringBuilder.bold(getString(R.string.address_book_empty_text)));
-	}
+        setEmptyText(WholeStringBuilder.bold(getString(R.string.address_book_empty_text)));
+    }
 
-	@Override
-	public void onResume()
-	{
-		super.onResume();
+    @Override
+    public void onResume() {
+        super.onResume();
 
-		contentResolver.registerContentObserver(AddressBookProvider.contentUri(activity.getPackageName()), true, contentObserver);
+        contentResolver.registerContentObserver(AddressBookProvider.contentUri(activity.getPackageName()), true, contentObserver);
 
-		wallet.addEventListener(walletListener, Threading.SAME_THREAD);
-		walletListener.onKeysAdded(null); // trigger initial load of keys
+        wallet.addEventListener(walletListener, Threading.SAME_THREAD);
+        walletListener.onKeysAdded(null); // trigger initial load of keys
 
-		updateView();
-	}
+        updateView();
+    }
 
-	@Override
-	public void onPause()
-	{
-		wallet.removeEventListener(walletListener);
+    @Override
+    public void onPause() {
+        wallet.removeEventListener(walletListener);
 
-		contentResolver.unregisterContentObserver(contentObserver);
+        contentResolver.unregisterContentObserver(contentObserver);
 
-		super.onPause();
-	}
+        super.onPause();
+    }
 
-	@Override
-	public void onCreateOptionsMenu(final Menu menu, final MenuInflater inflater)
-	{
-		inflater.inflate(R.menu.wallet_addresses_fragment_options, menu);
+    @Override
+    public void onCreateOptionsMenu(final Menu menu, final MenuInflater inflater) {
+        inflater.inflate(R.menu.wallet_addresses_fragment_options, menu);
 
-		super.onCreateOptionsMenu(menu, inflater);
-	}
+        super.onCreateOptionsMenu(menu, inflater);
+    }
 
-	@Override
-	public void onListItemClick(final ListView l, final View v, final int position, final long id)
-	{
-		activity.startActionMode(new ActionMode.Callback()
-		{
-			@Override
-			public boolean onCreateActionMode(final ActionMode mode, final Menu menu)
-			{
-				final MenuInflater inflater = mode.getMenuInflater();
-				inflater.inflate(R.menu.wallet_addresses_context, menu);
+    @Override
+    public void onListItemClick(final ListView l, final View v, final int position, final long id) {
+        activity.startActionMode(new ActionMode.Callback() {
+            @Override
+            public boolean onCreateActionMode(final ActionMode mode, final Menu menu) {
+                final MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.wallet_addresses_context, menu);
 
-				return true;
-			}
+                return true;
+            }
 
-			@Override
-			public boolean onPrepareActionMode(final ActionMode mode, final Menu menu)
-			{
-				final ECKey key = getKey(position);
+            @Override
+            public boolean onPrepareActionMode(final ActionMode mode, final Menu menu) {
+                final ECKey key = getKey(position);
 
-				final String address = key.toAddress(Constants.NETWORK_PARAMETERS).toString();
-				final String label = AddressBookProvider.resolveLabel(activity, address);
-				mode.setTitle(label != null ? label : WalletUtils.formatHash(address, Constants.ADDRESS_FORMAT_GROUP_SIZE, 0));
+                final String address = key.toAddress(Constants.NETWORK_PARAMETERS).toString();
+                final String label = AddressBookProvider.resolveLabel(activity, address);
+                mode.setTitle(label != null ? label : WalletUtils.formatHash(address, Constants.ADDRESS_FORMAT_GROUP_SIZE, 0));
 
-				return true;
-			}
+                return true;
+            }
 
-			@Override
-			public boolean onActionItemClicked(final ActionMode mode, final MenuItem item)
-			{
-				switch (item.getItemId())
-				{
-					case R.id.wallet_addresses_context_edit:
-						handleEdit(getAddress(position));
+            @Override
+            public boolean onActionItemClicked(final ActionMode mode, final MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.wallet_addresses_context_edit:
+                        handleEdit(getAddress(position));
 
-						mode.finish();
-						return true;
+                        mode.finish();
+                        return true;
 
-					case R.id.wallet_addresses_context_show_qr:
-						handleShowQr(getAddress(position));
+                    case R.id.wallet_addresses_context_show_qr:
+                        handleShowQr(getAddress(position));
 
-						mode.finish();
-						return true;
+                        mode.finish();
+                        return true;
 
-					case R.id.wallet_addresses_context_copy_to_clipboard:
-						handleCopyToClipboard(getAddress(position));
+                    case R.id.wallet_addresses_context_copy_to_clipboard:
+                        handleCopyToClipboard(getAddress(position));
 
-						mode.finish();
-						return true;
+                        mode.finish();
+                        return true;
 
-					case R.id.wallet_addresses_context_browse:
-						startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.EXPLORE_BASE_URL + "address/"
-								+ getAddress(position).toString())));
+                    case R.id.wallet_addresses_context_browse:
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.EXPLORE_BASE_URL + "address/"
+                                + getAddress(position).toString())));
 
-						mode.finish();
-						return true;
-				}
+                        mode.finish();
+                        return true;
+                }
 
-				return false;
-			}
+                return false;
+            }
 
-			@Override
-			public void onDestroyActionMode(final ActionMode mode)
-			{
-			}
+            @Override
+            public void onDestroyActionMode(final ActionMode mode) {
+            }
 
-			private ECKey getKey(final int position)
-			{
-				return (ECKey) getListAdapter().getItem(position);
-			}
+            private ECKey getKey(final int position) {
+                return (ECKey) getListAdapter().getItem(position);
+            }
 
-			private Address getAddress(final int position)
-			{
-				return getKey(position).toAddress(Constants.NETWORK_PARAMETERS);
-			}
+            private Address getAddress(final int position) {
+                return getKey(position).toAddress(Constants.NETWORK_PARAMETERS);
+            }
 
-			private void handleEdit(@Nonnull final Address address)
-			{
-				EditAddressBookEntryFragment.edit(getFragmentManager(), address.toString());
-			}
+            private void handleEdit(@Nonnull final Address address) {
+                EditAddressBookEntryFragment.edit(getFragmentManager(), address.toString());
+            }
 
-			private void handleShowQr(@Nonnull final Address address)
-			{
-				final String uri = BitcoinURI.convertToBitcoinURI(address, null, null, null);
-				final int size = getResources().getDimensionPixelSize(R.dimen.bitmap_dialog_qr_size);
-				BitmapFragment.show(getFragmentManager(), Qr.bitmap(uri, size));
-			}
+            private void handleShowQr(@Nonnull final Address address) {
+                final String uri = BitcoinURI.convertToBitcoinURI(address, null, null, null);
+                final int size = getResources().getDimensionPixelSize(R.dimen.bitmap_dialog_qr_size);
+                BitmapFragment.show(getFragmentManager(), Qr.bitmap(uri, size));
+            }
 
-			private void handleCopyToClipboard(@Nonnull final Address address)
-			{
-				clipboardManager.setPrimaryClip(ClipData.newPlainText("Bitcoin address", address.toString()));
-				log.info("address copied to clipboard: {}", address.toString());
-				activity.toast(R.string.wallet_address_fragment_clipboard_msg);
-			}
-		});
-	}
+            private void handleCopyToClipboard(@Nonnull final Address address) {
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("Bitcoin address", address.toString()));
+                log.info("address copied to clipboard: {}", address.toString());
+                activity.toast(R.string.wallet_address_fragment_clipboard_msg);
+            }
+        });
+    }
 
-	private void updateView()
-	{
-		final ListAdapter adapter = getListAdapter();
-		if (adapter != null)
-			((BaseAdapter) adapter).notifyDataSetChanged();
-	}
+    private void updateView() {
+        final ListAdapter adapter = getListAdapter();
+        if (adapter != null)
+            ((BaseAdapter) adapter).notifyDataSetChanged();
+    }
 
-	private final Handler handler = new Handler();
+    private final Handler handler = new Handler();
 
-	private final ContentObserver contentObserver = new ContentObserver(handler)
-	{
-		@Override
-		public void onChange(final boolean selfChange)
-		{
-			updateView();
-		}
-	};
+    private final ContentObserver contentObserver = new ContentObserver(handler) {
+        @Override
+        public void onChange(final boolean selfChange) {
+            updateView();
+        }
+    };
 
-	private final WalletEventListener walletListener = new AbstractWalletEventListener()
-	{
-		@Override
-		public void onKeysAdded(final List<ECKey> keysAdded)
-		{
-			final List<ECKey> keys = wallet.getImportedKeys();
+    private final WalletEventListener walletListener = new AbstractWalletEventListener() {
+        @Override
+        public void onKeysAdded(final List<ECKey> keysAdded) {
+            final List<ECKey> keys = wallet.getImportedKeys();
 
-			Collections.sort(keys, new Comparator<ECKey>()
-			{
-				@Override
-				public int compare(final ECKey lhs, final ECKey rhs)
-				{
-					final boolean lhsRotating = wallet.isKeyRotating(lhs);
-					final boolean rhsRotating = wallet.isKeyRotating(rhs);
+            Collections.sort(keys, new Comparator<ECKey>() {
+                @Override
+                public int compare(final ECKey lhs, final ECKey rhs) {
+                    final boolean lhsRotating = wallet.isKeyRotating(lhs);
+                    final boolean rhsRotating = wallet.isKeyRotating(rhs);
 
-					if (lhsRotating != rhsRotating)
-						return lhsRotating ? 1 : -1;
+                    if (lhsRotating != rhsRotating)
+                        return lhsRotating ? 1 : -1;
 
-					if (lhs.getCreationTimeSeconds() != rhs.getCreationTimeSeconds())
-						return lhs.getCreationTimeSeconds() > rhs.getCreationTimeSeconds() ? 1 : -1;
+                    if (lhs.getCreationTimeSeconds() != rhs.getCreationTimeSeconds())
+                        return lhs.getCreationTimeSeconds() > rhs.getCreationTimeSeconds() ? 1 : -1;
 
-					return 0;
-				}
-			});
+                    return 0;
+                }
+            });
 
-			handler.post(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					adapter.replace(keys);
-				}
-			});
-		}
-	};
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    adapter.replace(keys);
+                }
+            });
+        }
+    };
 }

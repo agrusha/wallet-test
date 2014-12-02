@@ -32,67 +32,60 @@ import de.schildbach.wallet_test.R;
 /**
  * @author Andreas Schildbach
  */
-public final class WalletTransactionsFragment extends Fragment
-{
-	private static final int INITIAL_PAGE = 1;
+public final class WalletTransactionsFragment extends Fragment {
+    private static final int INITIAL_PAGE = 1;
 
-	@Override
-	public void onCreate(final Bundle savedInstanceState)
-	{
-		super.onCreate(savedInstanceState);
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		setRetainInstance(true);
-	}
+        setRetainInstance(true);
+    }
 
-	@Override
-	public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState)
-	{
-		final View view = inflater.inflate(R.layout.wallet_transactions_fragment, container, false);
+    @Override
+    public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+        final View view = inflater.inflate(R.layout.wallet_transactions_fragment, container, false);
 
-		final ViewPagerTabs pagerTabs = (ViewPagerTabs) view.findViewById(R.id.transactions_pager_tabs);
-		pagerTabs.addTabLabels(R.string.wallet_transactions_fragment_tab_received, R.string.wallet_transactions_fragment_tab_all,
-				R.string.wallet_transactions_fragment_tab_sent);
+        final ViewPagerTabs pagerTabs = (ViewPagerTabs) view.findViewById(R.id.transactions_pager_tabs);
+        pagerTabs.addTabLabels(R.string.wallet_transactions_fragment_tab_received, R.string.wallet_transactions_fragment_tab_all,
+                R.string.wallet_transactions_fragment_tab_sent);
 
-		final PagerAdapter pagerAdapter = new PagerAdapter(getFragmentManager());
+        final PagerAdapter pagerAdapter = new PagerAdapter(getFragmentManager());
 
-		final ViewPager pager = (ViewPager) view.findViewById(R.id.transactions_pager);
-		pager.setAdapter(pagerAdapter);
-		pager.setOnPageChangeListener(pagerTabs);
-		pager.setCurrentItem(INITIAL_PAGE);
-		pager.setPageMargin(2);
-		pager.setPageMarginDrawable(R.color.bg_less_bright);
-		pagerTabs.onPageScrolled(INITIAL_PAGE, 0, 0); // should not be needed
+        final ViewPager pager = (ViewPager) view.findViewById(R.id.transactions_pager);
+        pager.setAdapter(pagerAdapter);
+        pager.setOnPageChangeListener(pagerTabs);
+        pager.setCurrentItem(INITIAL_PAGE);
+        pager.setPageMargin(2);
+        pager.setPageMarginDrawable(R.color.bg_less_bright);
+        pagerTabs.onPageScrolled(INITIAL_PAGE, 0, 0); // should not be needed
 
-		return view;
-	}
+        return view;
+    }
 
-	private static class PagerAdapter extends FragmentStatePagerAdapter
-	{
-		public PagerAdapter(final FragmentManager fm)
-		{
-			super(fm);
-		}
+    private static class PagerAdapter extends FragmentStatePagerAdapter {
+        public PagerAdapter(final FragmentManager fm) {
+            super(fm);
+        }
 
-		@Override
-		public int getCount()
-		{
-			return 3;
-		}
+        @Override
+        public int getCount() {
+            return 3;
+        }
 
-		@Override
-		public Fragment getItem(final int position)
-		{
-			final Direction direction;
-			if (position == 0)
-				direction = Direction.RECEIVED;
-			else if (position == 1)
-				direction = null;
-			else if (position == 2)
-				direction = Direction.SENT;
-			else
-				throw new IllegalStateException();
+        @Override
+        public Fragment getItem(final int position) {
+            final Direction direction;
+            if (position == 0)
+                direction = Direction.RECEIVED;
+            else if (position == 1)
+                direction = null;
+            else if (position == 2)
+                direction = Direction.SENT;
+            else
+                throw new IllegalStateException();
 
-			return TransactionsListFragment.instance(direction);
-		}
-	}
+            return TransactionsListFragment.instance(direction);
+        }
+    }
 }

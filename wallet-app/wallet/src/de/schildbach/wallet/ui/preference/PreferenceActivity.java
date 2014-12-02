@@ -17,43 +17,38 @@
 
 package de.schildbach.wallet.ui.preference;
 
-import java.util.List;
-
 import android.app.ActionBar;
 import android.os.Bundle;
 import android.view.MenuItem;
 import de.schildbach.wallet_test.R;
 
+import java.util.List;
+
 /**
  * @author Andreas Schildbach
  */
-public final class PreferenceActivity extends android.preference.PreferenceActivity
-{
-	@Override
-	protected void onCreate(final Bundle savedInstanceState)
-	{
-		super.onCreate(savedInstanceState);
+public final class PreferenceActivity extends android.preference.PreferenceActivity {
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		final ActionBar actionBar = getActionBar();
-		actionBar.setDisplayHomeAsUpEnabled(true);
-	}
+        final ActionBar actionBar = getActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+    }
 
-	@Override
-	public void onBuildHeaders(final List<Header> target)
-	{
-		loadHeadersFromResource(R.xml.preference_headers, target);
-	}
+    @Override
+    public void onBuildHeaders(final List<Header> target) {
+        loadHeadersFromResource(R.xml.preference_headers, target);
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(final MenuItem item)
-	{
-		switch (item.getItemId())
-		{
-			case android.R.id.home:
-				finish();
-				return true;
-		}
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+        }
 
-		return super.onOptionsItemSelected(item);
-	}
+        return super.onOptionsItemSelected(item);
+    }
 }
