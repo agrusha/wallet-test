@@ -69,7 +69,7 @@ public final class SendCoinsQrActivity extends Activity {
                 @Override
                 protected void handleDirectTransaction(final Transaction transaction) throws VerificationException {
                     final WalletApplication application = (WalletApplication) getApplication();
-                    application.processDirectTransaction(transaction);
+                    application.getWalletClient().processDirectTransaction(transaction);
 
                     SendCoinsQrActivity.this.finish();
                 }

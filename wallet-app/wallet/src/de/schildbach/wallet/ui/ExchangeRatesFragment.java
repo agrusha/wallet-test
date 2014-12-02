@@ -52,7 +52,7 @@ import javax.annotation.CheckForNull;
  */
 public final class ExchangeRatesFragment extends FancyListFragment implements OnSharedPreferenceChangeListener {
     private AbstractWalletActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private Uri contentUri;
@@ -76,9 +76,9 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         super.onAttach(activity);
 
         this.activity = (AbstractWalletActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.config = walletClient.getConfiguration();
+        this.wallet = walletClient.getWallet();
         this.contentUri = ExchangeRatesProvider.contentUri(activity.getPackageName(), false);
         this.loaderManager = getLoaderManager();
     }
@@ -218,7 +218,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     }
 
     private void updateView() {
-        balance = application.getWallet().getBalance(BalanceType.ESTIMATED);
+        balance = walletClient.getWallet().getBalance(BalanceType.ESTIMATED);
 
         if (adapter != null) {
             final int btcShift = config.getBtcShift();

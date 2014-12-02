@@ -48,7 +48,7 @@ import android.widget.TextView;
 import com.google.common.base.Charsets;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.InputParser.BinaryInputParser;
 import de.schildbach.wallet.ui.InputParser.StringInputParser;
@@ -80,7 +80,7 @@ public final class WalletActivity extends AbstractWalletActivity {
     private static final int DIALOG_VERSION_ALERT = 3;
     private static final int DIALOG_LOW_STORAGE_ALERT = 4;
 
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
 
@@ -92,9 +92,9 @@ public final class WalletActivity extends AbstractWalletActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        application = getWalletApplication();
-        config = application.getConfiguration();
-        wallet = application.getWallet();
+        walletClient = getWalletClient();
+        config = walletClient.getConfiguration();
+        wallet = walletClient.getWallet();
 
         setContentView(R.layout.wallet_content);
 
@@ -116,7 +116,7 @@ public final class WalletActivity extends AbstractWalletActivity {
             @Override
             public void run() {
                 // delayed start so that UI has enough time to initialize
-                getWalletApplication().startBlockchainService(true);
+                getWalletClient().startBlockchainService(true);
             }
         }, 1000);
 
@@ -175,7 +175,7 @@ public final class WalletActivity extends AbstractWalletActivity {
 
                 @Override
                 protected void handleDirectTransaction(final Transaction tx) throws VerificationException {
-                    application.processDirectTransaction(tx);
+                    walletClient.processDirectTransaction(tx);
                 }
 
                 @Override
@@ -526,12 +526,12 @@ public final class WalletActivity extends AbstractWalletActivity {
     }
 
     private void checkAlerts() {
-        final PackageInfo packageInfo = getWalletApplication().packageInfo();
+        final PackageInfo packageInfo = getWalletClient().packageInfo();
         final int versionNameSplit = packageInfo.versionName.indexOf('-');
         final String base = Constants.VERSION_URL + (versionNameSplit >= 0 ? packageInfo.versionName.substring(versionNameSplit) : "");
         final String url = base + "?package=" + packageInfo.packageName + "&current=" + packageInfo.versionCode;
 
-        new HttpGetThread(getAssets(), url, application.httpUserAgent()) {
+        new HttpGetThread(getAssets(), url, walletClient.httpUserAgent()) {
             @Override
             protected void handleLine(final String line, final long serverTime) {
                 final int serverVersionCode = Integer.parseInt(line.split("\\s+")[0]);
@@ -599,7 +599,7 @@ public final class WalletActivity extends AbstractWalletActivity {
                 @Override
                 protected CharSequence collectApplicationInfo() throws IOException {
                     final StringBuilder applicationInfo = new StringBuilder();
-                    CrashReporter.appendApplicationInfo(applicationInfo, application);
+                    CrashReporter.appendApplicationInfo(applicationInfo, walletClient);
                     return applicationInfo;
                 }
 
@@ -774,7 +774,7 @@ public final class WalletActivity extends AbstractWalletActivity {
     }
 
     private void restoreWallet(final Wallet wallet) throws IOException {
-        application.replaceWallet(wallet);
+        walletClient.replaceWallet(wallet);
 
         config.disarmBackupReminder();
 
@@ -787,7 +787,7 @@ public final class WalletActivity extends AbstractWalletActivity {
         dialog.setNeutralButton(R.string.button_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int id) {
-                getWalletApplication().resetBlockchainService();
+                getWalletClient().resetBlockchainService();
                 finish();
             }
         });

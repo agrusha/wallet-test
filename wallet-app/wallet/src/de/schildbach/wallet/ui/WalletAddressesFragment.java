@@ -30,6 +30,7 @@ import android.widget.ListView;
 import de.schildbach.wallet.AddressBookProvider;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.util.BitmapFragment;
 import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet.util.WalletUtils;
@@ -51,7 +52,7 @@ import java.util.List;
  */
 public final class WalletAddressesFragment extends FancyListFragment {
     private AddressBookActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Wallet wallet;
     private ClipboardManager clipboardManager;
     private ContentResolver contentResolver;
@@ -65,8 +66,8 @@ public final class WalletAddressesFragment extends FancyListFragment {
         super.onAttach(activity);
 
         this.activity = (AddressBookActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.wallet = walletClient.getWallet();
         this.clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
         this.contentResolver = activity.getContentResolver();
     }

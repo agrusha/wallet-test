@@ -65,7 +65,7 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
 
         this.activity = (WalletActivity) activity;
         final WalletApplication application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
+        this.config = application.getWalletClient().getConfiguration();
         this.loaderManager = getLoaderManager();
     }
 

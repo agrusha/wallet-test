@@ -32,11 +32,8 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-import de.schildbach.wallet.Configuration;
-import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.ExchangeRatesProvider;
+import de.schildbach.wallet.*;
 import de.schildbach.wallet.ExchangeRatesProvider.ExchangeRate;
-import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.service.BlockchainState;
 import de.schildbach.wallet.service.BlockchainStateLoader;
 import de.schildbach.wallet_test.R;
@@ -50,7 +47,7 @@ import javax.annotation.CheckForNull;
  * @author Andreas Schildbach
  */
 public final class WalletBalanceFragment extends Fragment {
-    private WalletApplication application;
+    private WalletClient walletClient;
     private AbstractWalletActivity activity;
     private Configuration config;
     private Wallet wallet;
@@ -83,9 +80,9 @@ public final class WalletBalanceFragment extends Fragment {
         super.onAttach(activity);
 
         this.activity = (AbstractWalletActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.config = walletClient.getConfiguration();
+        this.wallet = walletClient.getWallet();
         this.loaderManager = getLoaderManager();
 
         showLocalBalance = getResources().getBoolean(R.bool.show_local_balance);

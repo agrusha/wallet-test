@@ -38,11 +38,8 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
 import android.widget.TextView;
-import de.schildbach.wallet.Configuration;
-import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.ExchangeRatesProvider;
+import de.schildbach.wallet.*;
 import de.schildbach.wallet.ExchangeRatesProvider.ExchangeRate;
-import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.offline.AcceptBluetoothService;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.util.BitmapFragment;
@@ -66,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class RequestCoinsFragment extends Fragment implements NfcAdapter.CreateNdefMessageCallback {
     private AbstractBindServiceActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private LoaderManager loaderManager;
@@ -125,9 +122,9 @@ public final class RequestCoinsFragment extends Fragment implements NfcAdapter.C
         super.onAttach(activity);
 
         this.activity = (AbstractBindServiceActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.config = walletClient.getConfiguration();
+        this.wallet = walletClient.getWallet();
         this.loaderManager = getLoaderManager();
         this.clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
         this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();

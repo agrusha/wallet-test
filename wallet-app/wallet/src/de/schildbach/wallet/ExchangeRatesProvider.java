@@ -110,7 +110,7 @@ public class ExchangeRatesProvider extends ContentProvider {
 
         this.config = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
 
-        this.userAgent = WalletApplication.httpUserAgent(WalletApplication.packageInfoFromContext(context).versionName);
+        this.userAgent = WalletClient.httpUserAgent(WalletClient.packageInfoFromContext(context).versionName);
 
         final ExchangeRate cachedExchangeRate = config.getCachedExchangeRate();
         if (cachedExchangeRate != null) {

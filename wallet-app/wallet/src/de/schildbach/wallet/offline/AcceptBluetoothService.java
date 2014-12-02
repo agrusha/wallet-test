@@ -29,6 +29,7 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.text.format.DateUtils;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.core.Wallet;
@@ -39,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * @author Andreas Schildbach
  */
 public final class AcceptBluetoothService extends Service {
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Wallet wallet;
     private WakeLock wakeLock;
     private AcceptBluetoothThread classicThread;
@@ -73,8 +74,8 @@ public final class AcceptBluetoothService extends Service {
 
         super.onCreate();
 
-        this.application = (WalletApplication) getApplication();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) getApplication()).getWalletClient();
+        this.wallet = walletClient.getWallet();
 
         final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -111,7 +112,7 @@ public final class AcceptBluetoothService extends Service {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        application.broadcastTransaction(tx);
+                        walletClient.broadcastTransaction(tx);
                     }
                 });
             } else {

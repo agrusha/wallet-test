@@ -69,7 +69,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Andreas Schildbach
  */
 public class BlockchainServiceImpl extends android.app.Service implements BlockchainService {
-    private WalletApplication application;
+    private WalletClient walletCLient;
     private Configuration config;
 
     private BlockStore blockStore;
@@ -107,7 +107,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
     private final WalletEventListener walletEventListener = new ThrottlingWalletChangeListener(APPWIDGET_THROTTLE_MS) {
         @Override
         public void onThrottledWalletChanged() {
-            WalletBalanceWidgetProvider.updateWidgets(BlockchainServiceImpl.this, application.getWallet());
+            WalletBalanceWidgetProvider.updateWidgets(BlockchainServiceImpl.this, walletCLient.getWallet());
         }
 
         @Override
@@ -150,7 +150,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
         final MonetaryFormat btcFormat = config.getFormat();
 
-        final String packageFlavor = application.applicationPackageFlavor();
+        final String packageFlavor = walletCLient.applicationPackageFlavor();
         final String msgSuffix = packageFlavor != null ? " [" + packageFlavor + "]" : "";
 
         final String tickerMsg = getString(R.string.notification_coins_received_msg, btcFormat.format(amount)) + msgSuffix;
@@ -299,7 +299,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
         @SuppressLint("Wakelock")
         private void check() {
-            final Wallet wallet = application.getWallet();
+            final Wallet wallet = walletCLient.getWallet();
 
             if (impediments.isEmpty() && peerGroup == null) {
                 log.debug("acquiring wakelock");
@@ -311,17 +311,17 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
                 if (walletLastBlockSeenHeight != -1 && walletLastBlockSeenHeight != bestChainHeight) {
                     final String message = "wallet/blockchain out of sync: " + walletLastBlockSeenHeight + "/" + bestChainHeight;
                     log.error(message);
-                    CrashReporter.saveBackgroundTrace(new RuntimeException(message), application.packageInfo());
+                    CrashReporter.saveBackgroundTrace(new RuntimeException(message), walletCLient.packageInfo());
                 }
 
                 log.info("starting peergroup");
                 peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, blockChain);
                 peerGroup.setDownloadTxDependencies(false); // recursive implementation causes StackOverflowError
                 peerGroup.addWallet(wallet);
-                peerGroup.setUserAgent(Constants.USER_AGENT, application.packageInfo().versionName);
+                peerGroup.setUserAgent(Constants.USER_AGENT, walletCLient.packageInfo().versionName);
                 peerGroup.addEventListener(peerConnectivityListener);
 
-                final int maxConnectedPeers = application.maxConnectedPeers();
+                final int maxConnectedPeers = walletCLient.maxConnectedPeers();
 
                 final String trustedPeerHost = config.getTrustedPeerHost();
                 final boolean hasTrustedPeer = !trustedPeerHost.isEmpty();
@@ -490,9 +490,9 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
         final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
 
-        application = (WalletApplication) getApplication();
-        config = application.getConfiguration();
-        final Wallet wallet = application.getWallet();
+        walletCLient = ((WalletApplication) getApplication()).getWalletClient();
+        config = walletCLient.getConfiguration();
+        final Wallet wallet = walletCLient.getWallet();
 
         peerConnectivityListener = new PeerConnectivityListener();
 
@@ -543,7 +543,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
         intentFilter.addAction(Intent.ACTION_DEVICE_STORAGE_OK);
         registerReceiver(connectivityReceiver, intentFilter); // implicitly start PeerGroup
 
-        application.getWallet().addEventListener(walletEventListener, Threading.SAME_THREAD);
+        walletCLient.getWallet().addEventListener(walletEventListener, Threading.SAME_THREAD);
 
         registerReceiver(tickReceiver, new IntentFilter(Intent.ACTION_TIME_TICK));
     }
@@ -569,7 +569,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
                 stopSelf();
             } else if (BlockchainService.ACTION_BROADCAST_TRANSACTION.equals(action)) {
                 final Sha256Hash hash = new Sha256Hash(intent.getByteArrayExtra(BlockchainService.ACTION_BROADCAST_TRANSACTION_HASH));
-                final Transaction tx = application.getWallet().getTransaction(hash);
+                final Transaction tx = walletCLient.getWallet().getTransaction(hash);
 
                 if (peerGroup != null) {
                     log.info("broadcasting transaction " + tx.getHashAsString());
@@ -589,17 +589,17 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
     public void onDestroy() {
         log.debug(".onDestroy()");
 
-        WalletApplication.scheduleStartBlockchainService(this);
+        WalletClient.scheduleStartBlockchainService(this);
 
         unregisterReceiver(tickReceiver);
 
-        application.getWallet().removeEventListener(walletEventListener);
+        walletCLient.getWallet().removeEventListener(walletEventListener);
 
         unregisterReceiver(connectivityReceiver);
 
         if (peerGroup != null) {
             peerGroup.removeEventListener(peerConnectivityListener);
-            peerGroup.removeWallet(application.getWallet());
+            peerGroup.removeWallet(walletCLient.getWallet());
             peerGroup.stopAsync();
             peerGroup.awaitTerminated();
 
@@ -616,7 +616,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
             throw new RuntimeException(x);
         }
 
-        application.saveWallet();
+        walletCLient.saveWallet();
 
         if (wakeLock.isHeld()) {
             log.debug("wakelock still held, releasing");

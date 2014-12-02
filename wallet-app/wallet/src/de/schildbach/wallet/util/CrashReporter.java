@@ -26,7 +26,7 @@ import android.os.Build;
 import com.google.common.base.Charsets;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.core.Wallet;
@@ -156,7 +156,7 @@ public class CrashReporter {
             report.append(String.format("%s %s (%d) - %tF %tF\n", p.packageName, p.versionName, p.versionCode, p.firstInstallTime, p.lastUpdateTime));
     }
 
-    public static void appendApplicationInfo(@Nonnull final Appendable report, @Nonnull final WalletApplication application) throws IOException {
+    public static void appendApplicationInfo(@Nonnull final Appendable report, @Nonnull final WalletClient application) throws IOException {
         final PackageInfo pi = application.packageInfo();
         final Configuration configuration = application.getConfiguration();
         final long now = System.currentTimeMillis();
@@ -196,14 +196,14 @@ public class CrashReporter {
         report.append("Last block seen: " + wallet.getLastBlockSeenHeight() + " (" + wallet.getLastBlockSeenHash() + ")\n");
 
         report.append("Databases:");
-        for (final String db : application.databaseList())
+        for (final String db : application.getApplicationContext().databaseList())
             report.append(" " + db);
         report.append("\n");
 
-        final File filesDir = application.getFilesDir();
+        final File filesDir = application.getApplicationContext().getFilesDir();
         report.append("\nContents of FilesDir " + filesDir + ":\n");
         appendDir(report, filesDir, 0);
-        final File logDir = application.getDir("log", Context.MODE_PRIVATE);
+        final File logDir = application.getApplicationContext().getDir("log", Context.MODE_PRIVATE);
         report.append("\nContents of LogDir " + logDir + ":\n");
         appendDir(report, logDir, 0);
     }

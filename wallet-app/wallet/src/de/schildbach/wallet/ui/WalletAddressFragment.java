@@ -35,6 +35,7 @@ import android.widget.ImageView;
 import de.schildbach.wallet.BlockchainServiceController;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.util.BitmapFragment;
 import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
@@ -57,7 +58,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class WalletAddressFragment extends Fragment implements NfcAdapter.CreateNdefMessageCallback {
     private Activity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Wallet wallet;
     private LoaderManager loaderManager;
     @CheckForNull
@@ -76,8 +77,8 @@ public final class WalletAddressFragment extends Fragment implements NfcAdapter.
         super.onAttach(activity);
 
         this.activity = activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.wallet = walletClient.getWallet();
         this.loaderManager = getLoaderManager();
         final NfcManager nfcManager = (NfcManager) activity.getSystemService(Context.NFC_SERVICE);
         this.nfcAdapter = nfcManager.getDefaultAdapter();

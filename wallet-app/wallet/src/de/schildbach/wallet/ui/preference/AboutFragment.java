@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.VersionMessage;
 
@@ -33,7 +34,7 @@ import org.bitcoinj.core.VersionMessage;
  */
 public final class AboutFragment extends PreferenceFragment {
     private Activity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private PackageManager packageManager;
 
     private static final String KEY_ABOUT_VERSION = "about_version";
@@ -45,7 +46,7 @@ public final class AboutFragment extends PreferenceFragment {
         super.onAttach(activity);
 
         this.activity = activity;
-        this.application = (WalletApplication) activity.getApplication();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.packageManager = activity.getPackageManager();
     }
 
@@ -55,7 +56,7 @@ public final class AboutFragment extends PreferenceFragment {
 
         addPreferencesFromResource(R.xml.preference_about);
 
-        findPreference(KEY_ABOUT_VERSION).setSummary(application.packageInfo().versionName);
+        findPreference(KEY_ABOUT_VERSION).setSummary(walletClient.packageInfo().versionName);
         Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(String.format(Constants.MARKET_APP_URL, activity.getPackageName())));
         if (packageManager.resolveActivity(marketIntent, 0) == null)
             marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(String.format(Constants.WEBMARKET_APP_URL, activity.getPackageName())));

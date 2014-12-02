@@ -21,6 +21,7 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import org.bitcoinj.core.Wallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ public final class UpgradeWalletService extends IntentService {
         context.startService(new Intent(context, UpgradeWalletService.class));
     }
 
-    private WalletApplication application;
+    private WalletClient walletClient;
 
     private static final Logger log = LoggerFactory.getLogger(UpgradeWalletService.class);
 
@@ -54,13 +55,13 @@ public final class UpgradeWalletService extends IntentService {
     public void onCreate() {
         super.onCreate();
 
-        application = (WalletApplication) getApplication();
+        walletClient = ((WalletApplication) getApplication()).getWalletClient();
 
     }
 
     @Override
     protected void onHandleIntent(final Intent intent) {
-        final Wallet wallet = application.getWallet();
+        final Wallet wallet = walletClient.getWallet();
 
         if (wallet.isDeterministicUpgradeRequired()) {
             log.info("detected non-HD wallet, upgrading");
@@ -69,7 +70,7 @@ public final class UpgradeWalletService extends IntentService {
             wallet.upgradeToDeterministic(null);
 
             // let other service pre-generate look-ahead keys
-            application.startBlockchainService(false);
+            walletClient.startBlockchainService(false);
         }
 
         maybeUpgradeToSecureChain(wallet);
@@ -80,7 +81,7 @@ public final class UpgradeWalletService extends IntentService {
             wallet.doMaintenance(null, false);
 
             // let other service pre-generate look-ahead keys
-            application.startBlockchainService(false);
+            walletClient.startBlockchainService(false);
         } catch (final Exception x) {
             log.error("failed doing wallet maintenance", x);
         }

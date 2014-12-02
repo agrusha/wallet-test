@@ -21,6 +21,7 @@ import android.widget.TextView;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.*;
 import de.schildbach.wallet.ui.InputParser.StringInputParser;
@@ -45,7 +46,7 @@ import java.util.Collection;
  */
 public class SweepWalletFragment extends Fragment {
     private AbstractBindServiceActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private FragmentManager fragmentManager;
 
@@ -79,8 +80,8 @@ public class SweepWalletFragment extends Fragment {
         super.onAttach(activity);
 
         this.activity = (AbstractBindServiceActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.config = walletClient.getConfiguration();
         this.config = new Configuration(PreferenceManager.getDefaultSharedPreferences(activity));
         this.fragmentManager = getFragmentManager();
     }
@@ -121,7 +122,7 @@ public class SweepWalletFragment extends Fragment {
         hintView = view.findViewById(R.id.sweep_wallet_fragment_hint);
 
         sweepTransactionView = (ListView) view.findViewById(R.id.sweep_wallet_fragment_sent_transaction);
-        sweepTransactionListAdapter = new TransactionsListAdapter(activity, application.getWallet(), application.maxConnectedPeers(), false);
+        sweepTransactionListAdapter = new TransactionsListAdapter(activity, walletClient.getWallet(), walletClient.maxConnectedPeers(), false);
         sweepTransactionView.setAdapter(sweepTransactionListAdapter);
 
         viewGo = (Button) view.findViewById(R.id.send_coins_go);
@@ -183,7 +184,7 @@ public class SweepWalletFragment extends Fragment {
         if (savedInstanceState.containsKey("wallet_to_sweep"))
             walletToSweep = WalletUtils.walletFromByteArray(savedInstanceState.getByteArray("wallet_to_sweep"));
         if (savedInstanceState.containsKey("sent_transaction_hash")) {
-            sentTransaction = application.getWallet().getTransaction((Sha256Hash) savedInstanceState.getSerializable("sent_transaction_hash"));
+            sentTransaction = walletClient.getWallet().getTransaction((Sha256Hash) savedInstanceState.getSerializable("sent_transaction_hash"));
             sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
         }
     }
@@ -345,7 +346,7 @@ public class SweepWalletFragment extends Fragment {
         };
 
         final Address address = walletToSweep.getImportedKeys().iterator().next().toAddress(Constants.NETWORK_PARAMETERS);
-        new RequestWalletBalanceTask(backgroundHandler, callback, application.httpUserAgent()).requestWalletBalance(address);
+        new RequestWalletBalanceTask(backgroundHandler, callback, walletClient.httpUserAgent()).requestWalletBalance(address);
     }
 
     private void updateView() {
@@ -407,7 +408,7 @@ public class SweepWalletFragment extends Fragment {
         state = State.PREPARATION;
         updateView();
 
-        final SendRequest sendRequest = SendRequest.emptyWallet(application.getWallet().freshReceiveAddress());
+        final SendRequest sendRequest = SendRequest.emptyWallet(walletClient.getWallet().freshReceiveAddress());
 
         new SendCoinsOfflineTask(walletToSweep, backgroundHandler) {
             @Override
@@ -419,7 +420,7 @@ public class SweepWalletFragment extends Fragment {
 
                 sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
 
-                application.processDirectTransaction(sentTransaction);
+                walletClient.processDirectTransaction(sentTransaction);
             }
 
             @Override

@@ -35,6 +35,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import com.google.common.util.concurrent.ListenableFuture;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.ui.AbstractWalletActivity;
 import de.schildbach.wallet.ui.DialogBuilder;
 import de.schildbach.wallet_test.R;
@@ -68,7 +69,7 @@ public class MaintenanceDialogFragment extends DialogFragment {
     }
 
     private AbstractWalletActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Wallet wallet;
 
     @CheckForNull
@@ -96,8 +97,8 @@ public class MaintenanceDialogFragment extends DialogFragment {
         super.onAttach(activity);
 
         this.activity = (AbstractWalletActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.wallet = walletClient.getWallet();
     }
 
     @Override
@@ -120,7 +121,7 @@ public class MaintenanceDialogFragment extends DialogFragment {
             fee = fee.add(tx.getFee());
         }
         final TextView messageView = (TextView) view.findViewById(R.id.maintenance_dialog_message);
-        final MonetaryFormat format = application.getConfiguration().getFormat();
+        final MonetaryFormat format = walletClient.getConfiguration().getFormat();
         messageView.setText(getString(R.string.maintenance_dialog_message, format.format(value), format.format(fee)));
 
         passwordGroup = view.findViewById(R.id.maintenance_dialog_password_group);

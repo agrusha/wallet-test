@@ -23,7 +23,9 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,19 +35,15 @@ import javax.annotation.Nonnull;
  * @author Andreas Schildbach
  */
 public abstract class AbstractWalletActivity extends Activity {
-    private WalletApplication application;
+    @Getter private WalletClient walletClient;
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractWalletActivity.class);
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
-        application = (WalletApplication) getApplication();
+        walletClient = ((WalletApplication) getApplication()).getWalletClient();
 
         super.onCreate(savedInstanceState);
-    }
-
-    protected WalletApplication getWalletApplication() {
-        return application;
     }
 
     protected final void toast(@Nonnull final String text, final Object... formatArgs) {

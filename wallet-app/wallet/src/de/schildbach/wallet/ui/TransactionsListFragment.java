@@ -63,7 +63,7 @@ public class TransactionsListFragment extends FancyListFragment implements Loade
     }
 
     private AbstractWalletActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private ContentResolver resolver;
@@ -104,9 +104,9 @@ public class TransactionsListFragment extends FancyListFragment implements Loade
         super.onAttach(activity);
 
         this.activity = (AbstractWalletActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.config = walletClient.getConfiguration();
+        this.wallet = walletClient.getWallet();
         this.resolver = activity.getContentResolver();
         this.loaderManager = getLoaderManager();
     }
@@ -121,7 +121,7 @@ public class TransactionsListFragment extends FancyListFragment implements Loade
 
         final boolean showBackupWarning = direction == null || direction == Direction.RECEIVED;
 
-        adapter = new TransactionsListAdapter(activity, wallet, application.maxConnectedPeers(), showBackupWarning);
+        adapter = new TransactionsListAdapter(activity, wallet, walletClient.maxConnectedPeers(), showBackupWarning);
         setListAdapter(adapter);
     }
 

@@ -33,7 +33,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
 import de.schildbach.wallet.util.WalletUtils;
@@ -51,7 +51,7 @@ import java.util.concurrent.RejectedExecutionException;
  */
 public final class BlockListFragment extends ListFragment {
     private AbstractWalletActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private LoaderManager loaderManager;
@@ -73,9 +73,9 @@ public final class BlockListFragment extends ListFragment {
         super.onAttach(activity);
 
         this.activity = (AbstractWalletActivity) activity;
-        this.application = this.activity.getWalletApplication();
-        this.config = application.getConfiguration();
-        this.wallet = application.getWallet();
+        this.walletClient = this.activity.getWalletClient();
+        this.config = walletClient.getConfiguration();
+        this.wallet = walletClient.getWallet();
         this.loaderManager = getLoaderManager();
     }
 
@@ -197,7 +197,7 @@ public final class BlockListFragment extends ListFragment {
     private final class BlockListAdapter extends BaseAdapter {
         private static final int ROW_BASE_CHILD_COUNT = 2;
         private static final int ROW_INSERT_INDEX = 1;
-        private final TransactionsListAdapter transactionsAdapter = new TransactionsListAdapter(activity, wallet, application.maxConnectedPeers(),
+        private final TransactionsListAdapter transactionsAdapter = new TransactionsListAdapter(activity, wallet, walletClient.maxConnectedPeers(),
                 false);
         private final LayoutInflater inflater = LayoutInflater.from(activity);
 

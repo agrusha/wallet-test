@@ -26,6 +26,7 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.ui.DialogBuilder;
 import de.schildbach.wallet.ui.ReportIssueDialogBuilder;
 import de.schildbach.wallet.util.CrashReporter;
@@ -40,7 +41,7 @@ import java.io.IOException;
  */
 public final class DiagnosticsFragment extends PreferenceFragment {
     private Activity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
 
     private static final String PREFS_KEY_REPORT_ISSUE = "report_issue";
     private static final String PREFS_KEY_INITIATE_RESET = "initiate_reset";
@@ -52,7 +53,7 @@ public final class DiagnosticsFragment extends PreferenceFragment {
         super.onAttach(activity);
 
         this.activity = activity;
-        this.application = (WalletApplication) activity.getApplication();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
     }
 
     @Override
@@ -82,13 +83,13 @@ public final class DiagnosticsFragment extends PreferenceFragment {
                 R.string.report_issue_dialog_message_issue) {
             @Override
             protected CharSequence subject() {
-                return Constants.REPORT_SUBJECT_ISSUE + " " + application.packageInfo().versionName;
+                return Constants.REPORT_SUBJECT_ISSUE + " " + walletClient.packageInfo().versionName;
             }
 
             @Override
             protected CharSequence collectApplicationInfo() throws IOException {
                 final StringBuilder applicationInfo = new StringBuilder();
-                CrashReporter.appendApplicationInfo(applicationInfo, application);
+                CrashReporter.appendApplicationInfo(applicationInfo, walletClient);
                 return applicationInfo;
             }
 
@@ -106,7 +107,7 @@ public final class DiagnosticsFragment extends PreferenceFragment {
 
             @Override
             protected CharSequence collectWalletDump() {
-                return application.getWallet().toString(false, true, true, null);
+                return walletClient.getWallet().toString(false, true, true, null);
             }
         };
         dialog.show();
@@ -121,7 +122,7 @@ public final class DiagnosticsFragment extends PreferenceFragment {
             public void onClick(final DialogInterface dialog, final int which) {
                 log.info("manually initiated blockchain reset");
 
-                application.resetBlockchainService();
+                walletClient.resetBlockchainService();
                 activity.finish(); // TODO doesn't fully finish prefs on single pane layouts
             }
         });

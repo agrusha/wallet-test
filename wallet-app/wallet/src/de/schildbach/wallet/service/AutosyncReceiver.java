@@ -20,7 +20,7 @@ package de.schildbach.wallet.service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class AutosyncReceiver extends BroadcastReceiver {
                 UpgradeWalletService.startUpgrade(context);
 
             // make sure there is always an alarm scheduled
-            WalletApplication.scheduleStartBlockchainService(context);
+            WalletClient.scheduleStartBlockchainService(context);
         }
     }
 }

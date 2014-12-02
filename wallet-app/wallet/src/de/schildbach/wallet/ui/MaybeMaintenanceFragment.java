@@ -27,7 +27,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import com.google.common.util.concurrent.ListenableFuture;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainState;
 import de.schildbach.wallet.ui.send.MaintenanceDialogFragment;
@@ -59,8 +59,8 @@ public class MaybeMaintenanceFragment extends Fragment {
     public void onAttach(final Activity activity) {
         super.onAttach(activity);
 
-        final WalletApplication application = ((AbstractWalletActivity) activity).getWalletApplication();
-        this.wallet = application.getWallet();
+        final WalletClient walletClient = ((AbstractWalletActivity) activity).getWalletClient();
+        this.wallet = walletClient.getWallet();
         this.broadcastManager = LocalBroadcastManager.getInstance(activity);
     }
 

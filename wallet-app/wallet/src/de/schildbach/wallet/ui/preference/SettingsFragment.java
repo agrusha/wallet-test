@@ -27,6 +27,7 @@ import android.preference.PreferenceFragment;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.WalletBalanceWidgetProvider;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 
 import javax.annotation.Nonnull;
@@ -36,7 +37,7 @@ import javax.annotation.Nonnull;
  */
 public final class SettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener {
     private Activity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
 
     private final Handler handler = new Handler();
 
@@ -49,7 +50,7 @@ public final class SettingsFragment extends PreferenceFragment implements OnPref
         super.onAttach(activity);
 
         this.activity = activity;
-        this.application = (WalletApplication) activity.getApplication();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
     }
 
     @Override
@@ -88,12 +89,12 @@ public final class SettingsFragment extends PreferenceFragment implements OnPref
             @Override
             public void run() {
                 if (preference.equals(btcPrecisionPreference)) {
-                    WalletBalanceWidgetProvider.updateWidgets(activity, application.getWallet());
+                    WalletBalanceWidgetProvider.updateWidgets(activity, walletClient.getWallet());
                 } else if (preference.equals(trustedPeerPreference)) {
-                    application.stopBlockchainService();
+                    walletClient.stopBlockchainService();
                     updateTrustedPeer((String) newValue);
                 } else if (preference.equals(trustedPeerOnlyPreference)) {
-                    application.stopBlockchainService();
+                    walletClient.stopBlockchainService();
                 }
             }
         });

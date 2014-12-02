@@ -81,7 +81,7 @@ import java.util.Arrays;
  */
 public final class SendCoinsFragment extends Fragment {
     private AbstractBindServiceActivity activity;
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private ContentResolver contentResolver;
@@ -392,9 +392,9 @@ public final class SendCoinsFragment extends Fragment {
         super.onAttach(activity);
 
         this.activity = (AbstractBindServiceActivity) activity;
-        this.application = (WalletApplication) activity.getApplication();
-        this.config = application.getConfiguration();
-        this.wallet = application.getWallet();
+        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        this.config = walletClient.getConfiguration();
+        this.wallet = walletClient.getWallet();
         this.contentResolver = activity.getContentResolver();
         this.loaderManager = getLoaderManager();
         this.fragmentManager = getFragmentManager();
@@ -506,7 +506,7 @@ public final class SendCoinsFragment extends Fragment {
         directPaymentMessageView = (TextView) view.findViewById(R.id.send_coins_direct_payment_message);
 
         sentTransactionView = (ListView) view.findViewById(R.id.send_coins_sent_transaction);
-        sentTransactionListAdapter = new TransactionsListAdapter(activity, wallet, application.maxConnectedPeers(), false);
+        sentTransactionListAdapter = new TransactionsListAdapter(activity, wallet, walletClient.maxConnectedPeers(), false);
         sentTransactionView.setAdapter(sentTransactionListAdapter);
 
         privateKeyPasswordViewGroup = view.findViewById(R.id.send_coins_private_key_password_group);
@@ -816,7 +816,7 @@ public final class SendCoinsFragment extends Fragment {
                 if (directPaymentEnableView.isChecked())
                     directPay(payment);
 
-                application.broadcastTransaction(sentTransaction);
+                walletClient.broadcastTransaction(sentTransaction);
 
                 final ComponentName callingActivity = activity.getCallingActivity();
                 if (callingActivity != null) {
@@ -859,7 +859,7 @@ public final class SendCoinsFragment extends Fragment {
                 };
 
                 if (paymentIntent.isHttpPaymentUrl()) {
-                    new DirectPaymentTask.HttpPaymentTask(backgroundHandler, callback, paymentIntent.paymentUrl, application.httpUserAgent())
+                    new DirectPaymentTask.HttpPaymentTask(backgroundHandler, callback, paymentIntent.paymentUrl, walletClient.httpUserAgent())
                             .send(payment);
                 } else if (paymentIntent.isBluetoothPaymentUrl() && bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
                     new DirectPaymentTask.BluetoothPaymentTask(backgroundHandler, callback, bluetoothAdapter,
@@ -1308,7 +1308,7 @@ public final class SendCoinsFragment extends Fragment {
         };
 
         if (!Bluetooth.isBluetoothUrl(paymentIntent.paymentRequestUrl))
-            new RequestPaymentRequestTask.HttpRequestTask(backgroundHandler, callback, application.httpUserAgent())
+            new RequestPaymentRequestTask.HttpRequestTask(backgroundHandler, callback, walletClient.httpUserAgent())
                     .requestPaymentRequest(paymentIntent.paymentRequestUrl);
         else
             new RequestPaymentRequestTask.BluetoothRequestTask(backgroundHandler, callback, bluetoothAdapter)

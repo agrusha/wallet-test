@@ -57,7 +57,7 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(final Context context, final AppWidgetManager appWidgetManager, final int[] appWidgetIds) {
         final WalletApplication application = (WalletApplication) context.getApplicationContext();
-        final Coin balance = application.getWallet().getBalance(BalanceType.ESTIMATED);
+        final Coin balance = application.getWalletClient().getWallet().getBalance(BalanceType.ESTIMATED);
 
         updateWidgets(context, appWidgetManager, appWidgetIds, balance);
     }
@@ -69,7 +69,7 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
             log.info("app widget {} options changed: minWidth={}", appWidgetId, newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH));
 
         final WalletApplication application = (WalletApplication) context.getApplicationContext();
-        final Coin balance = application.getWallet().getBalance(BalanceType.ESTIMATED);
+        final Coin balance = application.getWalletClient().getWallet().getBalance(BalanceType.ESTIMATED);
 
         updateWidget(context, appWidgetManager, appWidgetId, newOptions, balance);
     }

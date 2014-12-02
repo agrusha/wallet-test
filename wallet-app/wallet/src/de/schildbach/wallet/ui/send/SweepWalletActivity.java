@@ -50,7 +50,7 @@ public final class SweepWalletActivity extends AbstractBindServiceActivity {
 
         setContentView(R.layout.sweep_wallet_content);
 
-        getWalletApplication().startBlockchainService(false);
+        getWalletClient().startBlockchainService(false);
 
         final ActionBar actionBar = getActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);

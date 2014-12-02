@@ -31,7 +31,7 @@ import android.widget.EditText;
 import com.google.common.base.Charsets;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.util.Crypto;
 import de.schildbach.wallet.util.Io;
 import de.schildbach.wallet.util.WalletUtils;
@@ -48,7 +48,7 @@ import java.io.*;
 public final class RestoreWalletActivity extends AbstractWalletActivity {
     private static final int DIALOG_RESTORE_WALLET = 0;
 
-    private WalletApplication application;
+    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private ContentResolver contentResolver;
@@ -59,9 +59,9 @@ public final class RestoreWalletActivity extends AbstractWalletActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        application = getWalletApplication();
-        config = application.getConfiguration();
-        wallet = application.getWallet();
+        walletClient = getWalletClient();
+        config = walletClient.getConfiguration();
+        wallet = walletClient.getWallet();
         contentResolver = getContentResolver();
 
         backupFileUri = getIntent().getData();
@@ -175,7 +175,7 @@ public final class RestoreWalletActivity extends AbstractWalletActivity {
     }
 
     private void restoreWallet(final Wallet wallet) throws IOException {
-        application.replaceWallet(wallet);
+        walletClient.replaceWallet(wallet);
 
         config.disarmBackupReminder();
 
@@ -188,7 +188,7 @@ public final class RestoreWalletActivity extends AbstractWalletActivity {
         dialog.setNeutralButton(R.string.button_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int id) {
-                getWalletApplication().resetBlockchainService();
+                getWalletClient().resetBlockchainService();
                 finish();
             }
         });
