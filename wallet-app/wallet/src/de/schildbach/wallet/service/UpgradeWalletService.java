@@ -22,9 +22,8 @@ import android.content.Context;
 import android.content.Intent;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.WalletClient;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Wallet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -36,14 +35,13 @@ import javax.annotation.Nonnull;
  *
  * @author Andreas Schildbach
  */
+@Slf4j
 public final class UpgradeWalletService extends IntentService {
+    private WalletClient walletClient;
+
     public static void startUpgrade(@Nonnull final Context context) {
         context.startService(new Intent(context, UpgradeWalletService.class));
     }
-
-    private WalletClient walletClient;
-
-    private static final Logger log = LoggerFactory.getLogger(UpgradeWalletService.class);
 
     public UpgradeWalletService() {
         super(UpgradeWalletService.class.getName());
@@ -56,7 +54,6 @@ public final class UpgradeWalletService extends IntentService {
         super.onCreate();
 
         walletClient = ((WalletApplication) getApplication()).getWalletClient();
-
     }
 
     @Override

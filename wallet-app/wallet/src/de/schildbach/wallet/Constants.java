@@ -123,6 +123,10 @@ public final class Constants {
      */
     public static final int MAX_NUM_CONFIRMATIONS = 7;
 
+    public static final int MAX_NUM_CONNECTED_PEERS_LOW = 4;
+
+    public static final int MAX_NUM_CONNECTED_PEERS_HIGH = 6;
+
     /**
      * User-agent to use for network access.
      */

@@ -47,16 +47,18 @@ public final class FileAttachmentProvider extends ContentProvider {
     public String getType(final Uri uri) {
         final File file = new File(uri.getPath());
 
-        if (!file.getAbsolutePath().startsWith(getContext().getCacheDir().getAbsolutePath()))
+        if (!file.getAbsolutePath().startsWith(getContext().getCacheDir().getAbsolutePath())) {
             return null;
+        }
 
         final String[] split = file.getName().split("\\.");
         if (split.length >= 2) {
             final String suffix = split[split.length - 1];
-            if ("txt".equalsIgnoreCase(suffix) || "log".equalsIgnoreCase(suffix))
+            if ("txt".equalsIgnoreCase(suffix) || "log".equalsIgnoreCase(suffix)) {
                 return "text/plain";
-            else if ("gz".equalsIgnoreCase(suffix))
+            } else if ("gz".equalsIgnoreCase(suffix)) {
                 return "application/x-gzip";
+            }
         }
 
         return null;
@@ -81,21 +83,22 @@ public final class FileAttachmentProvider extends ContentProvider {
     public Cursor query(final Uri uri, final String[] projection, final String selection, final String[] selectionArgs, final String sortOrder) {
         final File file = new File(uri.getPath());
 
-        if (!file.getAbsolutePath().startsWith(getContext().getCacheDir().getAbsolutePath()))
+        if (!file.getAbsolutePath().startsWith(getContext().getCacheDir().getAbsolutePath())) {
             throw new IllegalArgumentException("not in cache dir: " + uri);
+        }
 
         final MatrixCursor cursor = new MatrixCursor(projection);
         final RowBuilder row = cursor.newRow();
-        for (int i = 0; i < projection.length; i++) {
-            final String columnName = projection[i];
-            if (columnName.equals(MediaStore.MediaColumns.DATA))
+        for (final String columnName : projection) {
+            if (columnName.equals(MediaStore.MediaColumns.DATA)) {
                 row.add(file.getAbsolutePath());
-            else if (columnName.equals(MediaStore.MediaColumns.SIZE))
+            } else if (columnName.equals(MediaStore.MediaColumns.SIZE)) {
                 row.add(file.length());
-            else if (columnName.equals(MediaStore.MediaColumns.DISPLAY_NAME))
+            } else if (columnName.equals(MediaStore.MediaColumns.DISPLAY_NAME)) {
                 row.add(uri.getLastPathSegment());
-            else
+            } else {
                 throw new IllegalArgumentException("cannot handle: " + columnName);
+            }
         }
 
         return cursor;

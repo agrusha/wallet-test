@@ -43,6 +43,8 @@ public class AddressBookProvider extends ContentProvider {
     public static final String SELECTION_IN = "in";
     public static final String SELECTION_NOTIN = "notin";
 
+    private Helper helper;
+
     public static Uri contentUri(@Nonnull final String packageName) {
         return Uri.parse("content://" + packageName + '.' + DATABASE_TABLE);
     }
@@ -54,16 +56,14 @@ public class AddressBookProvider extends ContentProvider {
         final Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
         if (cursor != null) {
-            if (cursor.moveToFirst())
+            if (cursor.moveToFirst()) {
                 label = cursor.getString(cursor.getColumnIndexOrThrow(AddressBookProvider.KEY_LABEL));
-
+            }
             cursor.close();
         }
 
         return label;
     }
-
-    private Helper helper;
 
     @Override
     public boolean onCreate() {
@@ -78,8 +78,9 @@ public class AddressBookProvider extends ContentProvider {
 
     @Override
     public Uri insert(final Uri uri, final ContentValues values) {
-        if (uri.getPathSegments().size() != 1)
+        if (uri.getPathSegments().size() != 1) {
             throw new IllegalArgumentException(uri.toString());
+        }
 
         final String address = uri.getLastPathSegment();
         values.put(KEY_ADDRESS, address);
@@ -95,15 +96,17 @@ public class AddressBookProvider extends ContentProvider {
 
     @Override
     public int update(final Uri uri, final ContentValues values, final String selection, final String[] selectionArgs) {
-        if (uri.getPathSegments().size() != 1)
+        if (uri.getPathSegments().size() != 1) {
             throw new IllegalArgumentException(uri.toString());
+        }
 
         final String address = uri.getLastPathSegment();
 
         final int count = helper.getWritableDatabase().update(DATABASE_TABLE, values, KEY_ADDRESS + "=?", new String[]{address});
 
-        if (count > 0)
+        if (count > 0) {
             getContext().getContentResolver().notifyChange(uri, null);
+        }
 
         return count;
     }
@@ -111,15 +114,16 @@ public class AddressBookProvider extends ContentProvider {
     @Override
     public int delete(final Uri uri, final String selection, final String[] selectionArgs) {
         final List<String> pathSegments = uri.getPathSegments();
-        if (pathSegments.size() != 1)
+        if (pathSegments.size() != 1) {
             throw new IllegalArgumentException(uri.toString());
+        }
 
         final String address = uri.getLastPathSegment();
-
         final int count = helper.getWritableDatabase().delete(DATABASE_TABLE, KEY_ADDRESS + "=?", new String[]{address});
 
-        if (count > 0)
+        if (count > 0) {
             getContext().getContentResolver().notifyChange(uri, null);
+        }
 
         return count;
     }
@@ -131,8 +135,9 @@ public class AddressBookProvider extends ContentProvider {
         qb.setTables(DATABASE_TABLE);
 
         final List<String> pathSegments = uri.getPathSegments();
-        if (pathSegments.size() > 1)
+        if (pathSegments.size() > 1) {
             throw new IllegalArgumentException(uri.toString());
+        }
 
         String selection = null;
         String[] selectionArgs = null;
@@ -170,8 +175,9 @@ public class AddressBookProvider extends ContentProvider {
     private static void appendAddresses(@Nonnull final SQLiteQueryBuilder qb, @Nonnull final String[] addresses) {
         for (final String address : addresses) {
             qb.appendWhereEscapeString(address.trim());
-            if (!address.equals(addresses[addresses.length - 1]))
+            if (!address.equals(addresses[addresses.length - 1])) {
                 qb.appendWhere(",");
+            }
         }
     }
 

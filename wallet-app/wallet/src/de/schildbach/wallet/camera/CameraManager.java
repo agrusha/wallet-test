@@ -24,8 +24,7 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.PreviewCallback;
 import android.view.SurfaceHolder;
 import com.google.zxing.PlanarYUVLuminanceSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.*;
@@ -33,6 +32,7 @@ import java.util.*;
 /**
  * @author Andreas Schildbach
  */
+@Slf4j
 public final class CameraManager {
     private static final int MIN_FRAME_SIZE = 240;
     private static final int MAX_FRAME_SIZE = 600;
@@ -43,8 +43,6 @@ public final class CameraManager {
     private Camera.Size cameraResolution;
     private Rect frame;
     private Rect framePreview;
-
-    private static final Logger log = LoggerFactory.getLogger(CameraManager.class);
 
     public Rect getFrame() {
         return frame;
@@ -132,24 +130,27 @@ public final class CameraManager {
             final int pixels1 = size1.height * size1.width;
             final int pixels2 = size2.height * size2.width;
 
-            if (pixels1 < pixels2)
+            if (pixels1 < pixels2) {
                 return 1;
-            else if (pixels1 > pixels2)
+            } else if (pixels1 > pixels2) {
                 return -1;
-            else
+            } else {
                 return 0;
+            }
         }
     };
 
     private static Camera.Size findBestPreviewSizeValue(final Camera.Parameters parameters, Rect surfaceResolution) {
-        if (surfaceResolution.height() > surfaceResolution.width())
+        if (surfaceResolution.height() > surfaceResolution.width()) {
             surfaceResolution = new Rect(0, 0, surfaceResolution.height(), surfaceResolution.width());
+        }
 
         final float screenAspectRatio = (float) surfaceResolution.width() / (float) surfaceResolution.height();
 
         final List<Camera.Size> rawSupportedSizes = parameters.getSupportedPreviewSizes();
-        if (rawSupportedSizes == null)
+        if (rawSupportedSizes == null) {
             return parameters.getPreviewSize();
+        }
 
         // sort by size, descending
         final List<Camera.Size> supportedPreviewSizes = new ArrayList<Camera.Size>(rawSupportedSizes);
@@ -162,14 +163,16 @@ public final class CameraManager {
             final int realWidth = supportedPreviewSize.width;
             final int realHeight = supportedPreviewSize.height;
             final int realPixels = realWidth * realHeight;
-            if (realPixels < MIN_PREVIEW_PIXELS || realPixels > MAX_PREVIEW_PIXELS)
+            if (realPixels < MIN_PREVIEW_PIXELS || realPixels > MAX_PREVIEW_PIXELS) {
                 continue;
+            }
 
             final boolean isCandidatePortrait = realWidth < realHeight;
             final int maybeFlippedWidth = isCandidatePortrait ? realHeight : realWidth;
             final int maybeFlippedHeight = isCandidatePortrait ? realWidth : realHeight;
-            if (maybeFlippedWidth == surfaceResolution.width() && maybeFlippedHeight == surfaceResolution.height())
+            if (maybeFlippedWidth == surfaceResolution.width() && maybeFlippedHeight == surfaceResolution.height()) {
                 return supportedPreviewSize;
+            }
 
             final float aspectRatio = (float) maybeFlippedWidth / (float) maybeFlippedHeight;
             final float newDiff = Math.abs(aspectRatio - screenAspectRatio);
@@ -179,24 +182,27 @@ public final class CameraManager {
             }
         }
 
-        if (bestSize != null)
+        if (bestSize != null) {
             return bestSize;
-        else
+        } else {
             return parameters.getPreviewSize();
+        }
     }
 
     @SuppressLint("InlinedApi")
     private static void setDesiredCameraParameters(final Camera camera, final Camera.Size cameraResolution, final boolean continuousAutoFocus) {
         final Camera.Parameters parameters = camera.getParameters();
-        if (parameters == null)
+        if (parameters == null) {
             return;
+        }
 
         final List<String> supportedFocusModes = parameters.getSupportedFocusModes();
         final String focusMode = continuousAutoFocus ? findValue(supportedFocusModes, Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE,
                 Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO, Camera.Parameters.FOCUS_MODE_AUTO, Camera.Parameters.FOCUS_MODE_MACRO) : findValue(
                 supportedFocusModes, Camera.Parameters.FOCUS_MODE_AUTO, Camera.Parameters.FOCUS_MODE_MACRO);
-        if (focusMode != null)
+        if (focusMode != null) {
             parameters.setFocusMode(focusMode);
+        }
 
         parameters.setPreviewSize(cameraResolution.width, cameraResolution.height);
 
@@ -213,8 +219,9 @@ public final class CameraManager {
     }
 
     public void setTorch(final boolean enabled) {
-        if (enabled != getTorchEnabled(camera))
+        if (enabled != getTorchEnabled(camera)) {
             setTorchEnabled(camera, enabled);
+        }
     }
 
     private static boolean getTorchEnabled(final Camera camera) {
@@ -233,10 +240,11 @@ public final class CameraManager {
         final List<String> supportedFlashModes = parameters.getSupportedFlashModes();
         if (supportedFlashModes != null) {
             final String flashMode;
-            if (enabled)
+            if (enabled) {
                 flashMode = findValue(supportedFlashModes, Camera.Parameters.FLASH_MODE_TORCH, Camera.Parameters.FLASH_MODE_ON);
-            else
+            } else {
                 flashMode = findValue(supportedFlashModes, Camera.Parameters.FLASH_MODE_OFF);
+            }
 
             if (flashMode != null) {
                 camera.cancelAutoFocus(); // autofocus can cause conflict
@@ -248,9 +256,11 @@ public final class CameraManager {
     }
 
     private static String findValue(final Collection<String> values, final String... valuesToFind) {
-        for (final String valueToFind : valuesToFind)
-            if (values.contains(valueToFind))
+        for (final String valueToFind : valuesToFind) {
+            if (values.contains(valueToFind)) {
                 return valueToFind;
+            }
+        }
 
         return null;
     }

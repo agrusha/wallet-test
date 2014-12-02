@@ -25,11 +25,10 @@ import android.os.Looper;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.util.Bluetooth;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoin.protocols.payments.Protos;
 import org.bitcoin.protocols.payments.Protos.Payment;
 import org.bitcoinj.protocols.payments.PaymentProtocol;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -41,12 +40,11 @@ import java.net.URL;
 /**
  * @author Andreas Schildbach
  */
+@Slf4j
 public abstract class DirectPaymentTask {
     private final Handler backgroundHandler;
     private final Handler callbackHandler;
     private final ResultCallback resultCallback;
-
-    private static final Logger log = LoggerFactory.getLogger(DirectPaymentTask.class);
 
     public interface ResultCallback {
         void onResult(boolean ack);
@@ -98,8 +96,9 @@ public abstract class DirectPaymentTask {
                         connection.setRequestProperty("Content-Type", PaymentProtocol.MIMETYPE_PAYMENT);
                         connection.setRequestProperty("Accept", PaymentProtocol.MIMETYPE_PAYMENTACK);
                         connection.setRequestProperty("Content-Length", Integer.toString(payment.getSerializedSize()));
-                        if (userAgent != null)
+                        if (userAgent != null) {
                             connection.addRequestProperty("User-Agent", userAgent);
+                        }
                         connection.connect();
 
                         os = connection.getOutputStream();
@@ -147,8 +146,9 @@ public abstract class DirectPaymentTask {
                             }
                         }
 
-                        if (connection != null)
+                        if (connection != null) {
                             connection.disconnect();
+                        }
                     }
                 }
             });
@@ -174,8 +174,9 @@ public abstract class DirectPaymentTask {
                 public void run() {
                     log.info("trying to send tx via bluetooth {}", bluetoothMac);
 
-                    if (payment.getTransactionsCount() != 1)
+                    if (payment.getTransactionsCount() != 1) {
                         throw new IllegalArgumentException("wrong transactions count");
+                    }
 
                     final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(Bluetooth.decompressMac(bluetoothMac));
 
@@ -209,32 +210,22 @@ public abstract class DirectPaymentTask {
 
                         onFail(R.string.error_io, x.getMessage());
                     } finally {
-                        if (os != null) {
-                            try {
-                                os.close();
-                            } catch (final IOException x) {
-                                // swallow
-                            }
-                        }
-
-                        if (is != null) {
-                            try {
-                                is.close();
-                            } catch (final IOException x) {
-                                // swallow
-                            }
-                        }
-
-                        if (socket != null) {
-                            try {
-                                socket.close();
-                            } catch (final IOException x) {
-                                // swallow
-                            }
-                        }
+                        close(os);
+                        close(is);
+                        close(socket);
                     }
                 }
             });
+        }
+    }
+
+    private static void close(Closeable stream) {
+        if (stream != null) {
+            try {
+                stream.close();
+            } catch (final IOException x) {
+                // swallow
+            }
         }
     }
 

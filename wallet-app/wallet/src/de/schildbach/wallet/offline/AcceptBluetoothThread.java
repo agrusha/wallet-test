@@ -84,8 +84,9 @@ public abstract class AcceptBluetoothThread extends Thread {
                         try {
                             final Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, msg);
 
-                            if (!handleTx(tx))
+                            if (!handleTx(tx)) {
                                 ack = false;
+                            }
                         } catch (final ProtocolException x) {
                             log.info("cannot decode message received via bluetooth", x);
                             ack = false;
@@ -152,8 +153,9 @@ public abstract class AcceptBluetoothThread extends Thread {
                     log.debug("got payment message");
 
                     for (final Transaction tx : PaymentProtocol.parseTransactionsFromPaymentMessage(Constants.NETWORK_PARAMETERS, payment)) {
-                        if (!handleTx(tx))
+                        if (!handleTx(tx)) {
                             ack = false;
+                        }
                     }
 
                     final String memo = ack ? "ack" : "nack";

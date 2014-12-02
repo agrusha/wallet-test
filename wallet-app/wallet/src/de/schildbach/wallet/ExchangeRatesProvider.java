@@ -123,8 +123,9 @@ public class ExchangeRatesProvider extends ContentProvider {
 
     public static Uri contentUri(@Nonnull final String packageName, final boolean offline) {
         final Uri.Builder uri = Uri.parse("content://" + packageName + '.' + "exchange_rates").buildUpon();
-        if (offline)
+        if (offline) {
             uri.appendQueryParameter(QUERY_PARAM_OFFLINE, "1");
+        }
         return uri.build();
     }
 
@@ -135,24 +136,27 @@ public class ExchangeRatesProvider extends ContentProvider {
         final boolean offline = uri.getQueryParameter(QUERY_PARAM_OFFLINE) != null;
 
         if (!offline && (lastUpdated == 0 || now - lastUpdated > UPDATE_FREQ_MS)) {
-            Map<String, ExchangeRate> newExchangeRates = null;
-            if (newExchangeRates == null)
-                newExchangeRates = requestExchangeRates(BITCOINAVERAGE_URL, userAgent, BITCOINAVERAGE_SOURCE, BITCOINAVERAGE_FIELDS);
-            if (newExchangeRates == null)
+            Map<String, ExchangeRate> newExchangeRates;
+            newExchangeRates = requestExchangeRates(BITCOINAVERAGE_URL, userAgent, BITCOINAVERAGE_SOURCE, BITCOINAVERAGE_FIELDS);
+
+            if (newExchangeRates == null) {
                 newExchangeRates = requestExchangeRates(BLOCKCHAININFO_URL, userAgent, BLOCKCHAININFO_SOURCE, BLOCKCHAININFO_FIELDS);
+            }
 
             if (newExchangeRates != null) {
                 exchangeRates = newExchangeRates;
                 lastUpdated = now;
 
                 final ExchangeRate exchangeRateToCache = bestExchangeRate(config.getExchangeCurrencyCode());
-                if (exchangeRateToCache != null)
+                if (exchangeRateToCache != null) {
                     config.setCachedExchangeRate(exchangeRateToCache);
+                }
             }
         }
 
-        if (exchangeRates == null)
+        if (exchangeRates == null) {
             return null;
+        }
 
         final MatrixCursor cursor = new MatrixCursor(new String[]{BaseColumns._ID, KEY_CURRENCY_CODE, KEY_RATE_COIN, KEY_RATE_FIAT, KEY_SOURCE});
 
@@ -170,8 +174,9 @@ public class ExchangeRatesProvider extends ContentProvider {
                 final org.bitcoinj.utils.ExchangeRate rate = exchangeRate.rate;
                 final String currencyCode = exchangeRate.getCurrencyCode();
                 final String currencySymbol = GenericUtils.currencySymbol(currencyCode);
-                if (currencyCode.toLowerCase(Locale.US).contains(selectionArg) || currencySymbol.toLowerCase(Locale.US).contains(selectionArg))
+                if (currencyCode.toLowerCase(Locale.US).contains(selectionArg) || currencySymbol.toLowerCase(Locale.US).contains(selectionArg)) {
                     cursor.newRow().add(currencyCode.hashCode()).add(currencyCode).add(rate.coin.value).add(rate.fiat.value).add(exchangeRate.source);
+                }
             }
         } else if (selection.equals(KEY_CURRENCY_CODE)) {
             final String selectionArg = selectionArgs[0];
@@ -188,14 +193,16 @@ public class ExchangeRatesProvider extends ContentProvider {
 
     private ExchangeRate bestExchangeRate(final String currencyCode) {
         ExchangeRate rate = currencyCode != null ? exchangeRates.get(currencyCode) : null;
-        if (rate != null)
+        if (rate != null) {
             return rate;
+        }
 
         final String defaultCode = defaultCurrencyCode();
         rate = defaultCode != null ? exchangeRates.get(defaultCode) : null;
 
-        if (rate != null)
+        if (rate != null) {
             return rate;
+        }
 
         return exchangeRates.get(Constants.DEFAULT_EXCHANGE_CURRENCY);
     }
@@ -310,8 +317,9 @@ public class ExchangeRatesProvider extends ContentProvider {
                 }
             }
 
-            if (connection != null)
+            if (connection != null) {
                 connection.disconnect();
+            }
         }
 
         return null;

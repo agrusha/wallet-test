@@ -39,6 +39,7 @@ import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
 import org.bitcoinj.net.discovery.DnsDiscovery;
@@ -49,8 +50,6 @@ import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.utils.Threading;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -68,6 +67,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author Andreas Schildbach
  */
+
+@Slf4j
 public class BlockchainServiceImpl extends android.app.Service implements BlockchainService {
     private WalletClient walletCLient;
     private Configuration config;
@@ -102,8 +103,6 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
     private static final long APPWIDGET_THROTTLE_MS = DateUtils.SECOND_IN_MILLIS;
     private static final long BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS = DateUtils.SECOND_IN_MILLIS;
 
-    private static final Logger log = LoggerFactory.getLogger(BlockchainServiceImpl.class);
-
     private final WalletEventListener walletEventListener = new ThrottlingWalletChangeListener(APPWIDGET_THROTTLE_MS) {
         @Override
         public void onThrottledWalletChanged() {
@@ -127,8 +126,9 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
                     final boolean replaying = bestChainHeight < config.getBestChainHeightEver();
                     final boolean isReplayedTx = confidenceType == ConfidenceType.BUILDING && replaying;
 
-                    if (isReceived && !isReplayedTx)
+                    if (isReceived && !isReplayedTx) {
                         notifyCoinsReceived(from, amount);
+                    }
                 }
             });
         }
@@ -140,13 +140,15 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
     };
 
     private void notifyCoinsReceived(@Nullable final Address from, @Nonnull final Coin amount) {
-        if (notificationCount == 1)
+        if (notificationCount == 1) {
             nm.cancel(NOTIFICATION_ID_COINS_RECEIVED);
+        }
 
         notificationCount++;
         notificationAccumulatedAmount = notificationAccumulatedAmount.add(amount);
-        if (from != null && !notificationAddresses.contains(from))
+        if (from != null && !notificationAddresses.contains(from)) {
             notificationAddresses.add(from);
+        }
 
         final MonetaryFormat btcFormat = config.getFormat();
 
@@ -158,8 +160,9 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
         final StringBuilder text = new StringBuilder();
         for (final Address address : notificationAddresses) {
-            if (text.length() > 0)
+            if (text.length() > 0) {
                 text.append(", ");
+            }
 
             final String addressStr = address.toString();
             final String label = AddressBookProvider.resolveLabel(getApplicationContext(), addressStr);
@@ -170,8 +173,9 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
         notification.setSmallIcon(R.drawable.stat_notify_received);
         notification.setTicker(tickerMsg);
         notification.setContentTitle(msg);
-        if (text.length() > 0)
+        if (text.length() > 0) {
             notification.setContentText(text);
+        }
         notification.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, WalletActivity.class), 0));
         notification.setNumber(notificationCount == 1 ? 0 : notificationCount);
         notification.setWhen(System.currentTimeMillis());
@@ -209,13 +213,15 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
         @Override
         public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences, final String key) {
-            if (Configuration.PREFS_KEY_CONNECTIVITY_NOTIFICATION.equals(key))
+            if (Configuration.PREFS_KEY_CONNECTIVITY_NOTIFICATION.equals(key)) {
                 changed(peerCount);
+            }
         }
 
         private void changed(final int numPeers) {
-            if (stopped.get())
+            if (stopped.get()) {
                 return;
+            }
 
             handler.post(new Runnable() {
                 @Override
@@ -254,10 +260,11 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
             final long now = System.currentTimeMillis();
 
-            if (now - lastMessageTime.get() > BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS)
+            if (now - lastMessageTime.get() > BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS) {
                 delayHandler.post(runnable);
-            else
+            } else {
                 delayHandler.postDelayed(runnable, BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS);
+            }
         }
 
         private final Runnable runnable = new Runnable() {
@@ -279,10 +286,11 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
                 final boolean hasConnectivity = !intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
                 log.info("network is " + (hasConnectivity ? "up" : "down"));
 
-                if (hasConnectivity)
+                if (hasConnectivity) {
                     impediments.remove(Impediment.NETWORK);
-                else
+                } else {
                     impediments.add(Impediment.NETWORK);
+                }
                 check();
             } else if (Intent.ACTION_DEVICE_STORAGE_LOW.equals(action)) {
                 log.info("device storage low");
@@ -349,13 +357,15 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
                             }
                         }
 
-                        if (!connectTrustedPeerOnly)
+                        if (!connectTrustedPeerOnly) {
                             peers.addAll(Arrays.asList(normalPeerDiscovery.getPeers(timeoutValue, timeoutUnit)));
+                        }
 
                         // workaround because PeerGroup will shuffle peers
-                        if (needsTrimPeersWorkaround)
+                        if (needsTrimPeersWorkaround) {
                             while (peers.size() >= maxConnectedPeers)
                                 peers.remove(peers.size() - 1);
+                        }
 
                         return peers.toArray(new InetSocketAddress[0]);
                     }
@@ -415,14 +425,16 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
                 activityHistory.add(0, new ActivityHistoryEntry(numTransactionsReceived, numBlocksDownloaded));
 
                 // trim
-                while (activityHistory.size() > MAX_HISTORY_SIZE)
+                while (activityHistory.size() > MAX_HISTORY_SIZE) {
                     activityHistory.remove(activityHistory.size() - 1);
+                }
 
                 // print
                 final StringBuilder builder = new StringBuilder();
                 for (final ActivityHistoryEntry entry : activityHistory) {
-                    if (builder.length() > 0)
+                    if (builder.length() > 0) {
                         builder.append(", ");
+                    }
                     builder.append(entry);
                 }
                 log.info("History of transactions/blocks: " + builder);
@@ -655,10 +667,11 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
     @Override
     public List<Peer> getConnectedPeers() {
-        if (peerGroup != null)
+        if (peerGroup != null) {
             return peerGroup.getConnectedPeers();
-        else
+        } else {
             return null;
+        }
     }
 
     @Override
@@ -671,8 +684,9 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
             while (block != null) {
                 blocks.add(block);
 
-                if (blocks.size() >= maxBlocks)
+                if (blocks.size() >= maxBlocks) {
                     break;
+                }
 
                 block = block.getPrev(blockStore);
             }

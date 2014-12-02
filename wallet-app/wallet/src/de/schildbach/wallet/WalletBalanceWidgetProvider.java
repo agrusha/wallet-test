@@ -38,21 +38,20 @@ import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.util.GenericUtils;
 import de.schildbach.wallet.util.MonetarySpannable;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.core.Wallet.BalanceType;
 import org.bitcoinj.utils.Fiat;
 import org.bitcoinj.utils.MonetaryFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 
 /**
  * @author Andreas Schildbach
  */
+@Slf4j
 public class WalletBalanceWidgetProvider extends AppWidgetProvider {
-    private static final Logger log = LoggerFactory.getLogger(WalletBalanceWidgetProvider.class);
 
     @Override
     public void onUpdate(final Context context, final AppWidgetManager appWidgetManager, final int[] appWidgetIds) {
@@ -65,8 +64,9 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
     @Override
     public void onAppWidgetOptionsChanged(final Context context, final AppWidgetManager appWidgetManager, final int appWidgetId,
                                           final Bundle newOptions) {
-        if (newOptions != null)
+        if (newOptions != null) {
             log.info("app widget {} options changed: minWidth={}", appWidgetId, newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH));
+        }
 
         final WalletApplication application = (WalletApplication) context.getApplicationContext();
         final Coin balance = application.getWalletClient().getWallet().getBalance(BalanceType.ESTIMATED);
@@ -85,8 +85,7 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
                 final Coin balance = wallet.getBalance(BalanceType.ESTIMATED);
                 WalletBalanceWidgetProvider.updateWidgets(context, appWidgetManager, appWidgetIds, balance);
             }
-        } catch (final RuntimeException x) // system server dead?
-        {
+        } catch (final RuntimeException x){ // system server dead?
             log.warn("cannot update app widgets", x);
         }
     }
@@ -128,12 +127,13 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.wallet_balance_widget_content);
 
         final String currencyCode = btcFormat.code();
-        if (MonetaryFormat.CODE_BTC.equals(currencyCode))
+        if (MonetaryFormat.CODE_BTC.equals(currencyCode)) {
             views.setImageViewResource(R.id.widget_wallet_prefix, R.drawable.currency_symbol_btc);
-        else if (MonetaryFormat.CODE_MBTC.equals(currencyCode))
+        } else if (MonetaryFormat.CODE_MBTC.equals(currencyCode)) {
             views.setImageViewResource(R.id.widget_wallet_prefix, R.drawable.currency_symbol_mbtc);
-        else if (MonetaryFormat.CODE_UBTC.equals(currencyCode))
+        } else if (MonetaryFormat.CODE_UBTC.equals(currencyCode)) {
             views.setImageViewResource(R.id.widget_wallet_prefix, R.drawable.currency_symbol_ubtc);
+        }
 
         views.setTextViewText(R.id.widget_wallet_balance_btc, balanceStr);
         views.setViewVisibility(R.id.widget_wallet_balance_local, localBalanceStr != null ? View.VISIBLE : View.GONE);

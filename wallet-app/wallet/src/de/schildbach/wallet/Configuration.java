@@ -70,18 +70,20 @@ public class Configuration {
 
     private int getBtcPrecision() {
         final String precision = prefs.getString(PREFS_KEY_BTC_PRECISION, null);
-        if (precision != null)
+        if (precision != null) {
             return precision.charAt(0) - '0';
-        else
+        } else {
             return PREFS_DEFAULT_BTC_PRECISION;
+        }
     }
 
     public int getBtcShift() {
         final String precision = prefs.getString(PREFS_KEY_BTC_PRECISION, null);
-        if (precision != null)
+        if (precision != null) {
             return precision.length() == 3 ? precision.charAt(2) - '0' : 0;
-        else
+        } else {
             return PREFS_DEFAULT_BTC_SHIFT;
+        }
     }
 
     public MonetaryFormat getFormat() {
@@ -93,12 +95,13 @@ public class Configuration {
 
     public MonetaryFormat getMaxPrecisionFormat() {
         final int shift = getBtcShift();
-        if (shift == 0)
+        if (shift == 0) {
             return new MonetaryFormat().shift(0).minDecimals(2).optionalDecimals(2, 2, 2);
-        else if (shift == 3)
+        } else if (shift == 3) {
             return new MonetaryFormat().shift(3).minDecimals(2).optionalDecimals(2, 1);
-        else
+        } else {
             return new MonetaryFormat().shift(6).minDecimals(0).optionalDecimals(2);
+        }
     }
 
     public boolean getConnectivityNotificationEnabled() {
@@ -156,10 +159,11 @@ public class Configuration {
     public void updateLastVersionCode(final int currentVersionCode) {
         prefs.edit().putInt(PREFS_KEY_LAST_VERSION, currentVersionCode).commit();
 
-        if (currentVersionCode > lastVersionCode)
+        if (currentVersionCode > lastVersionCode) {
             log.info("detected app upgrade: " + lastVersionCode + " -> " + currentVersionCode);
-        else if (currentVersionCode < lastVersionCode)
+        } else if (currentVersionCode < lastVersionCode) {
             log.warn("detected app downgrade: " + lastVersionCode + " -> " + currentVersionCode);
+        }
     }
 
     public long getLastUsedAgo() {
@@ -181,8 +185,9 @@ public class Configuration {
     }
 
     public void maybeIncrementBestChainHeightEver(final int bestChainHeightEver) {
-        if (bestChainHeightEver > getBestChainHeightEver())
+        if (bestChainHeightEver > getBestChainHeightEver()) {
             prefs.edit().putInt(PREFS_KEY_BEST_CHAIN_HEIGHT_EVER, bestChainHeightEver).commit();
+        }
     }
 
     public ExchangeRate getCachedExchangeRate() {

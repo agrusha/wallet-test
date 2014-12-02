@@ -133,9 +133,9 @@ public class WalletClient {
     public int maxConnectedPeers() {
         final int memoryClass = activityManager.getMemoryClass();
         if (memoryClass <= Constants.MEMORY_CLASS_LOWEND) {
-            return 4;
+            return Constants.MAX_NUM_CONNECTED_PEERS_LOW;
         } else {
-            return 6;
+            return Constants.MAX_NUM_CONNECTED_PEERS_HIGH;
         }
     }
 

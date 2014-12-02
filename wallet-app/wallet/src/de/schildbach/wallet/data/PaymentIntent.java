@@ -78,15 +78,17 @@ public final class PaymentIntent implements Parcelable {
             builder.append('[');
             builder.append(hasAmount() ? amount.toPlainString() : "null");
             builder.append(',');
-            if (script.isSentToAddress() || script.isPayToScriptHash())
+            if (script.isSentToAddress() || script.isPayToScriptHash()) {
                 builder.append(script.getToAddress(Constants.NETWORK_PARAMETERS));
-            else if (script.isSentToRawPubKey())
-                for (final byte b : script.getPubKey())
+            } else if (script.isSentToRawPubKey()) {
+                for (final byte b : script.getPubKey()) {
                     builder.append(String.format("%02x", b));
-            else if (script.isSentToMultiSig())
+                }
+            } else if (script.isSentToMultiSig()) {
                 builder.append("multisig");
-            else
+            } else {
                 builder.append("unknown");
+            }
             builder.append(']');
 
             return builder.toString();
@@ -236,8 +238,9 @@ public final class PaymentIntent implements Parcelable {
 
     public SendRequest toSendRequest() {
         final Transaction transaction = new Transaction(Constants.NETWORK_PARAMETERS);
-        for (final PaymentIntent.Output output : outputs)
+        for (final PaymentIntent.Output output : outputs) {
             transaction.addOutput(output.amount, output.script);
+        }
         return SendRequest.forTx(transaction);
     }
 
@@ -254,16 +257,18 @@ public final class PaymentIntent implements Parcelable {
     }
 
     public boolean hasAddress() {
-        if (outputs == null || outputs.length != 1)
+        if (outputs == null || outputs.length != 1) {
             return false;
+        }
 
         final Script script = outputs[0].script;
         return script.isSentToAddress() || script.isPayToScriptHash() || script.isSentToRawPubKey();
     }
 
     public Address getAddress() {
-        if (!hasAddress())
+        if (!hasAddress()) {
             throw new IllegalStateException();
+        }
 
         final Script script = outputs[0].script;
         return script.getToAddress(Constants.NETWORK_PARAMETERS, true);
@@ -274,10 +279,13 @@ public final class PaymentIntent implements Parcelable {
     }
 
     public boolean hasAmount() {
-        if (hasOutputs())
-            for (final Output output : outputs)
-                if (output.hasAmount())
+        if (hasOutputs()) {
+            for (final Output output : outputs) {
+                if (output.hasAmount()) {
                     return true;
+                }
+            }
+        }
 
         return false;
     }
@@ -285,15 +293,19 @@ public final class PaymentIntent implements Parcelable {
     public Coin getAmount() {
         Coin amount = Coin.ZERO;
 
-        if (hasOutputs())
-            for (final Output output : outputs)
-                if (output.hasAmount())
+        if (hasOutputs()) {
+            for (final Output output : outputs) {
+                if (output.hasAmount()) {
                     amount = amount.add(output.amount);
+                }
+            }
+        }
 
-        if (amount.signum() != 0)
+        if (amount.signum() != 0) {
             return amount;
-        else
+        } else {
             return null;
+        }
     }
 
     public boolean mayEditAmount() {
@@ -345,9 +357,11 @@ public final class PaymentIntent implements Parcelable {
      */
     public boolean isExtendedBy(final PaymentIntent other) {
         // shortcut via hash
-        if (standard == Standard.BIP21 && other.standard == Standard.BIP70)
-            if (paymentRequestHash != null && Arrays.equals(paymentRequestHash, other.paymentRequestHash))
+        if (standard == Standard.BIP21 && other.standard == Standard.BIP70) {
+            if (paymentRequestHash != null && Arrays.equals(paymentRequestHash, other.paymentRequestHash)) {
                 return true;
+            }
+        }
 
         // TODO memo
         return equalsAmount(other) && equalsAddress(other);
@@ -355,20 +369,12 @@ public final class PaymentIntent implements Parcelable {
 
     public boolean equalsAmount(final PaymentIntent other) {
         final boolean hasAmount = hasAmount();
-        if (hasAmount != other.hasAmount())
-            return false;
-        if (hasAmount && !getAmount().equals(other.getAmount()))
-            return false;
-        return true;
+        return hasAmount == other.hasAmount() && !(hasAmount && !getAmount().equals(other.getAmount()));
     }
 
     public boolean equalsAddress(final PaymentIntent other) {
         final boolean hasAddress = hasAddress();
-        if (hasAddress != other.hasAddress())
-            return false;
-        if (hasAddress && !getAddress().equals(other.getAddress()))
-            return false;
-        return true;
+        return hasAddress == other.hasAddress() && !(hasAddress && !getAddress().equals(other.getAddress()));
     }
 
     @Override
@@ -381,8 +387,9 @@ public final class PaymentIntent implements Parcelable {
         builder.append(',');
         if (hasPayee()) {
             builder.append(payeeName);
-            if (payeeVerifiedBy != null)
+            if (payeeVerifiedBy != null) {
                 builder.append("/").append(payeeVerifiedBy);
+            }
             builder.append(',');
         }
         builder.append(hasOutputs() ? Arrays.toString(outputs) : "null");
