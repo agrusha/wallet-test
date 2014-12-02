@@ -19,7 +19,7 @@ package de.schildbach.wallet.ui;
 
 import android.content.*;
 import android.support.v4.content.LocalBroadcastManager;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.BlockchainServiceController;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Wallet;
@@ -52,7 +52,7 @@ public final class WalletBalanceLoader extends AsyncTaskLoader<Coin> {
         super.onStartLoading();
 
         wallet.addEventListener(walletChangeListener, Threading.SAME_THREAD);
-        broadcastManager.registerReceiver(walletChangeReceiver, new IntentFilter(WalletApplication.ACTION_WALLET_CHANGED));
+        broadcastManager.registerReceiver(walletChangeReceiver, new IntentFilter(BlockchainServiceController.ACTION_WALLET_CHANGED));
 
         safeForceLoad();
     }

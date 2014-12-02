@@ -2,6 +2,7 @@ package de.schildbach.wallet;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
 
@@ -37,5 +38,9 @@ public class BlockchainServiceControllerImpl implements BlockchainServiceControl
     @Override
     public void resetBlockchainService() {
         applicationContext.startService(blockchainServiceResetBlockchainIntent);
+
+        final Intent broadcast = new Intent(ACTION_WALLET_CHANGED);
+        broadcast.setPackage(applicationContext.getPackageName());
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(broadcast);
     }
 }

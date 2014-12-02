@@ -121,7 +121,7 @@ public final class DiagnosticsFragment extends PreferenceFragment {
             public void onClick(final DialogInterface dialog, final int which) {
                 log.info("manually initiated blockchain reset");
 
-                application.resetBlockchain();
+                application.resetBlockchainService();
                 activity.finish(); // TODO doesn't fully finish prefs on single pane layouts
             }
         });

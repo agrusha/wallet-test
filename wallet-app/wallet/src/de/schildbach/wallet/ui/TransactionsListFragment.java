@@ -34,10 +34,7 @@ import android.text.format.DateUtils;
 import android.text.style.StyleSpan;
 import android.view.*;
 import android.widget.ListView;
-import de.schildbach.wallet.AddressBookProvider;
-import de.schildbach.wallet.Configuration;
-import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.*;
 import de.schildbach.wallet.util.BitmapFragment;
 import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
@@ -325,7 +322,7 @@ public class TransactionsListFragment extends FancyListFragment implements Loade
             super.onStartLoading();
 
             wallet.addEventListener(transactionAddRemoveListener, Threading.SAME_THREAD);
-            broadcastManager.registerReceiver(walletChangeReceiver, new IntentFilter(WalletApplication.ACTION_WALLET_CHANGED));
+            broadcastManager.registerReceiver(walletChangeReceiver, new IntentFilter(BlockchainServiceController.ACTION_WALLET_CHANGED));
             transactionAddRemoveListener.onReorganize(null); // trigger at least one reload
 
             safeForceLoad();

@@ -32,6 +32,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import de.schildbach.wallet.BlockchainServiceController;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.util.BitmapFragment;
@@ -147,7 +148,7 @@ public final class WalletAddressFragment extends Fragment implements NfcAdapter.
             super.onStartLoading();
 
             wallet.addEventListener(walletChangeListener, Threading.SAME_THREAD);
-            broadcastManager.registerReceiver(walletChangeReceiver, new IntentFilter(WalletApplication.ACTION_WALLET_CHANGED));
+            broadcastManager.registerReceiver(walletChangeReceiver, new IntentFilter(BlockchainServiceController.ACTION_WALLET_CHANGED));
 
             safeForceLoad();
         }
