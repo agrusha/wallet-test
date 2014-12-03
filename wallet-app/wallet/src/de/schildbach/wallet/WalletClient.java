@@ -12,6 +12,7 @@ import android.text.format.DateUtils;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
 import de.schildbach.wallet.util.CrashReporter;
+import de.schildbach.wallet.util.GuiThreadExecutor;
 import de.schildbach.wallet.util.LinuxSecureRandom;
 import lombok.Delegate;
 import lombok.Getter;
@@ -74,6 +75,10 @@ public class WalletClient {
 
     public Wallet getWallet() {
         return walletController.getWallet();
+    }
+
+    public GuiThreadExecutor getGuiThreadExecutor() {
+        return GuiThreadExecutor.getInstance();
     }
 
     public void saveWallet() {

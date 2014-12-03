@@ -11,7 +11,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.utils.observers.ObservableSupport;
-import de.schildbach.wallet.ui.TransactionsListFragment;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
 import lombok.Delegate;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +50,7 @@ public class TransactionManagerImpl implements TransactionManager {
     }
 
     @Override
-    public ListenableFuture<List<Transaction>> loadTransactions(final TransactionsListFragment.Direction direction) {
+    public ListenableFuture<List<Transaction>> loadTransactions(final Direction direction) {
         if(loadingTransactions == null) {
             return getFilteredTransactions(load(), direction);
         } else if(loadingTransactions.isDone()) {
@@ -66,7 +65,7 @@ public class TransactionManagerImpl implements TransactionManager {
     }
 
     private ListenableFuture<List<Transaction>> getFilteredTransactions(ListenableFuture<List<Transaction>> futureTransactions,
-                                                                        final TransactionsListFragment.Direction direction) {
+                                                                        final Direction direction) {
         return Futures.transform(futureTransactions, new Function<List<Transaction>, List<Transaction>>() {
             @Override
             public List<Transaction> apply(List<Transaction> input) {
@@ -81,7 +80,7 @@ public class TransactionManagerImpl implements TransactionManager {
         return loadingTransactions;
     }
 
-    private List<Transaction> applyTransactionsFilter(List<Transaction> origin, TransactionsListFragment.Direction direction) {
+    private List<Transaction> applyTransactionsFilter(List<Transaction> origin, Direction direction) {
         Iterable<Transaction> filteredTransactions = Iterables.filter(origin, new TransactionsFilter(direction));
         return Lists.newArrayList(filteredTransactions);
     }
@@ -101,13 +100,13 @@ public class TransactionManagerImpl implements TransactionManager {
 
     @RequiredArgsConstructor(suppressConstructorProperties = true)
     private class TransactionsFilter implements Predicate<Transaction> {
-        private final TransactionsListFragment.Direction direction;
+        private final Direction direction;
         @Override
         public boolean apply(Transaction input) {
             final boolean sent = input.getValue(wallet).signum() < 0;
             final boolean isInternal = input.getPurpose() == Transaction.Purpose.KEY_ROTATION;
 
-            return direction == null || !isInternal && ((direction == TransactionsListFragment.Direction.SENT) == sent);
+            return direction == null || !isInternal && ((direction == Direction.SENT) == sent);
         }
     }
 
