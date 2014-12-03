@@ -50,8 +50,8 @@ import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.data.PaymentIntent;
-import de.schildbach.wallet.ui.InputParser.BinaryInputParser;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import de.schildbach.wallet.data.InputParser.BinaryInputParser;
+import de.schildbach.wallet.data.InputParser.StringInputParser;
 import de.schildbach.wallet.ui.preference.PreferenceActivity;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.ui.send.SweepWalletActivity;
@@ -98,8 +98,9 @@ public final class WalletActivity extends AbstractWalletActivity {
 
         setContentView(R.layout.wallet_content);
 
-        if (savedInstanceState == null)
+        if (savedInstanceState == null) {
             checkAlerts();
+        }
 
         config.touchLastUsed();
 

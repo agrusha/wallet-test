@@ -1,17 +1,13 @@
 package de.schildbach.wallet;
 
-import android.content.Context;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.gowiper.utils.SimpleThreadFactory;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionConfidence;
 import org.bitcoinj.core.Wallet;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 
 public class TransactionLoader {
 
@@ -20,11 +16,13 @@ public class TransactionLoader {
     private final LoadTransactionsTask loadTransactionsTask = new LoadTransactionsTask();
     private final TransactionComparator transactionComparator = new TransactionComparator();
 
-    public TransactionLoader(Context context, Wallet wallet) {
+    public TransactionLoader(Wallet wallet, ListeningScheduledExecutorService backgroundExecutor) {
         this.wallet = wallet;
-        this.backgroundExecutor = MoreExecutors.listeningDecorator(
-                Executors.newScheduledThreadPool(2, SimpleThreadFactory.create("Scheduler", true))
-        );
+        this.backgroundExecutor = backgroundExecutor;
+    }
+
+    public ListenableFuture<List<Transaction>> loadTransactions() {
+        return backgroundExecutor.submit(loadTransactionsTask);
     }
 
     private List<Transaction> getTransactions() {
@@ -33,10 +31,6 @@ public class TransactionLoader {
         Collections.sort(transactionsList, transactionComparator);
 
         return transactionsList;
-    }
-
-    public ListenableFuture<List<Transaction>> loadTransactions() {
-        return backgroundExecutor.submit(loadTransactionsTask);
     }
 
     private class LoadTransactionsTask implements Callable<List<Transaction>>{

@@ -24,7 +24,7 @@ import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.WalletClient;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.*;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import de.schildbach.wallet.data.InputParser.StringInputParser;
 import de.schildbach.wallet.util.MonetarySpannable;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;

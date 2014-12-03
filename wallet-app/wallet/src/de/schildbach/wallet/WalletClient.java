@@ -9,6 +9,9 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 import android.text.format.DateUtils;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.gowiper.utils.SimpleThreadFactory;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
 import de.schildbach.wallet.util.CrashReporter;
@@ -26,6 +29,7 @@ import org.bitcoinj.utils.Threading;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class WalletClient {
@@ -35,6 +39,7 @@ public class WalletClient {
     @Delegate private final BlockchainServiceController blockchainServiceController;
     private final WalletController walletController;
     @Getter private final TransactionManager transactionManager;
+    @Getter private final ListeningScheduledExecutorService backgroundExecutor;
     private PackageInfo packageInfo;
 
     public WalletClient(Context context) {
@@ -43,6 +48,8 @@ public class WalletClient {
         initCrashReporter();
         initMnemonicCode();
         this.packageInfo = packageInfoFromContext(applicationContext);
+        this.backgroundExecutor = MoreExecutors.listeningDecorator(
+                Executors.newScheduledThreadPool(2, SimpleThreadFactory.create("Scheduler", true)));
         this.configuration = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
         this.activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
         this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());

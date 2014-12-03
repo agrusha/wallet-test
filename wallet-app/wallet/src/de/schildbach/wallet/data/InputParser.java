@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.schildbach.wallet.ui;
+package de.schildbach.wallet.data;
 
 import android.content.Context;
 import android.content.DialogInterface.OnClickListener;
@@ -23,10 +23,11 @@ import com.google.common.hash.Hashing;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UninitializedMessageException;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.data.PaymentIntent;
+import de.schildbach.wallet.ui.DialogBuilder;
 import de.schildbach.wallet.util.Io;
 import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoin.protocols.payments.Protos;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TrustStoreLoader;
@@ -36,8 +37,6 @@ import org.bitcoinj.protocols.payments.PaymentProtocolException;
 import org.bitcoinj.protocols.payments.PaymentSession;
 import org.bitcoinj.uri.BitcoinURI;
 import org.bitcoinj.uri.BitcoinURIParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,8 +53,8 @@ import java.util.regex.Pattern;
 /**
  * @author Andreas Schildbach
  */
+@Slf4j
 public abstract class InputParser {
-    private static final Logger log = LoggerFactory.getLogger(InputParser.class);
 
     public abstract static class StringInputParser extends InputParser {
         private final String input;
@@ -88,8 +87,9 @@ public abstract class InputParser {
                 try {
                     final BitcoinURI bitcoinUri = new BitcoinURI(null, input);
                     final Address address = bitcoinUri.getAddress();
-                    if (address != null && !Constants.NETWORK_PARAMETERS.equals(address.getParameters()))
+                    if (address != null && !Constants.NETWORK_PARAMETERS.equals(address.getParameters())) {
                         throw new BitcoinURIParseException("mismatched network");
+                    }
 
                     handlePaymentIntent(PaymentIntent.fromBitcoinUri(bitcoinUri));
                 } catch (final BitcoinURIParseException x) {
@@ -256,8 +256,9 @@ public abstract class InputParser {
 
     public static PaymentIntent parsePaymentRequest(@Nonnull final byte[] serializedPaymentRequest) throws PaymentProtocolException {
         try {
-            if (serializedPaymentRequest.length > 50000)
+            if (serializedPaymentRequest.length > 50000) {
                 throw new PaymentProtocolException("payment request too big: " + serializedPaymentRequest.length);
+            }
 
             final Protos.PaymentRequest paymentRequest = Protos.PaymentRequest.parseFrom(serializedPaymentRequest);
 
@@ -275,16 +276,19 @@ public abstract class InputParser {
 
             final PaymentSession paymentSession = PaymentProtocol.parsePaymentRequest(paymentRequest);
 
-            if (paymentSession.isExpired())
+            if (paymentSession.isExpired()) {
                 throw new PaymentProtocolException.Expired("payment details expired: current time " + new Date() + " after expiry time "
                         + paymentSession.getExpires());
+            }
 
-            if (!paymentSession.getNetworkParameters().equals(Constants.NETWORK_PARAMETERS))
+            if (!paymentSession.getNetworkParameters().equals(Constants.NETWORK_PARAMETERS)) {
                 throw new PaymentProtocolException.InvalidNetwork("cannot handle payment request network: " + paymentSession.getNetworkParameters());
+            }
 
             final ArrayList<PaymentIntent.Output> outputs = new ArrayList<PaymentIntent.Output>(1);
-            for (final PaymentProtocol.Output output : paymentSession.getOutputs())
+            for (final PaymentProtocol.Output output : paymentSession.getOutputs()) {
                 outputs.add(PaymentIntent.Output.valueOf(output));
+            }
 
             final String memo = paymentSession.getMemo();
 
@@ -297,8 +301,9 @@ public abstract class InputParser {
             final PaymentIntent paymentIntent = new PaymentIntent(PaymentIntent.Standard.BIP70, pkiName, pkiCaName,
                     outputs.toArray(new PaymentIntent.Output[0]), memo, paymentUrl, merchantData, null, paymentRequestHash);
 
-            if (paymentIntent.hasPaymentUrl() && !paymentIntent.isSupportedPaymentUrl())
+            if (paymentIntent.hasPaymentUrl() && !paymentIntent.isSupportedPaymentUrl()) {
                 throw new PaymentProtocolException.InvalidPaymentURL("cannot handle payment url: " + paymentIntent.paymentUrl);
+            }
 
             return paymentIntent;
         } catch (final InvalidProtocolBufferException x) {

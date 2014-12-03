@@ -21,12 +21,11 @@ import android.content.*;
 import android.support.v4.content.LocalBroadcastManager;
 import de.schildbach.wallet.BlockchainServiceController;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.core.Wallet.BalanceType;
 import org.bitcoinj.utils.Threading;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.RejectedExecutionException;
@@ -34,11 +33,11 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * @author Andreas Schildbach
  */
+
+@Slf4j
 public final class WalletBalanceLoader extends AsyncTaskLoader<Coin> {
     private LocalBroadcastManager broadcastManager;
     private final Wallet wallet;
-
-    private static final Logger log = LoggerFactory.getLogger(WalletBalanceLoader.class);
 
     public WalletBalanceLoader(final Context context, @Nonnull final Wallet wallet) {
         super(context);

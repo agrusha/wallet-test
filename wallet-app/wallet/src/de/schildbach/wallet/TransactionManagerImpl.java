@@ -36,11 +36,10 @@ public class TransactionManagerImpl implements TransactionManager {
     private final TransactionsLoadingReceiver transactionsLoadingReceiver = new TransactionsLoadingReceiver();
 
     public TransactionManagerImpl(WalletClient client) {
-        Context context = client.getApplicationContext();
         this.wallet = client.getWallet();
-        this.transactionLoader = new TransactionLoader(context, wallet);
+        this.transactionLoader = new TransactionLoader(wallet, client.getBackgroundExecutor());
         Configuration config = client.getConfiguration();
-        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(context);
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(client.getApplicationContext());
 
         config.registerOnSharedPreferenceChangeListener(new PreferencesListener());
         broadcastManager.registerReceiver(new WalletChangeReceiver(), new IntentFilter(BlockchainServiceController.ACTION_WALLET_CHANGED));
