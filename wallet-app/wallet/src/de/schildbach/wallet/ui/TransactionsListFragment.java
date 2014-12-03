@@ -66,6 +66,7 @@ public class TransactionsListFragment extends FancyListFragment implements Loade
     private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
+    private TransactionManager transactionManager;
     private ContentResolver resolver;
     private LoaderManager loaderManager;
 
@@ -107,6 +108,7 @@ public class TransactionsListFragment extends FancyListFragment implements Loade
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.wallet = walletClient.getWallet();
+        this.transactionManager = walletClient.getTransactionManager();
         this.resolver = activity.getContentResolver();
         this.loaderManager = getLoaderManager();
     }

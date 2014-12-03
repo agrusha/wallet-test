@@ -33,6 +33,7 @@ public class WalletClient {
     @Getter private final Configuration configuration;
     @Delegate private final BlockchainServiceController blockchainServiceController;
     private final WalletController walletController;
+    @Getter private final TransactionManager transactionManager;
     private PackageInfo packageInfo;
 
     public WalletClient(Context context) {
@@ -40,14 +41,15 @@ public class WalletClient {
         new LinuxSecureRandom(); // init proper random number generator
         initCrashReporter();
         initMnemonicCode();
-        packageInfo = packageInfoFromContext(applicationContext);
-        configuration = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
-        activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
-        blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());
+        this.packageInfo = packageInfoFromContext(applicationContext);
+        this.configuration = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
+        this.activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+        this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());
 
-        walletController = new WalletControllerImpl(context.getApplicationContext(), configuration);
+        this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration);
+        this.transactionManager = new TransactionManagerImpl(this);
 
-        configuration.updateLastVersionCode(packageInfo.versionCode);
+        this.configuration.updateLastVersionCode(packageInfo.versionCode);
     }
 
     private void initCrashReporter() {
