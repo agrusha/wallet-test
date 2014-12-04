@@ -36,6 +36,7 @@ import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.ExchangeRate;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.service.BlockchainState;
+import de.schildbach.wallet.util.GuiThreadExecutor;
 import de.schildbach.wallet.wallet.BlockchainManager;
 import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
@@ -56,6 +57,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     private Configuration config;
 
     private BlockchainManager blockchainManager;
+    private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
     private final BalanceUpdate balanceUpdate = new BalanceUpdate();
     private final BlockchainStateUpdate blockchainStateUpdate = new BlockchainStateUpdate();
@@ -86,6 +88,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.blockchainManager = walletClient.getBlockchainManager();
+        this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
 
         showLocalBalance = getResources().getBoolean(R.bool.show_local_balance);
     }
@@ -216,9 +219,9 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     }
 
     private void updateData() {
-        Futures.addCallback(blockchainManager.loadBalance(), balanceUpdate);
-        Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate);
-        Futures.addCallback(blockchainManager.loadExchangeRate(), exchangeRateUpdate);
+        Futures.addCallback(blockchainManager.loadBalance(), balanceUpdate, guiThreadExecutor);
+        Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
+        Futures.addCallback(blockchainManager.loadExchangeRate(), exchangeRateUpdate, guiThreadExecutor);
     }
 
     @Override
@@ -237,7 +240,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         @Override
         public void onSuccess(Coin result) {
             balance = result;
-            walletClient.getGuiThreadExecutor().execute(updateViewTask);
+            guiThreadExecutor.execute(updateViewTask);
         }
 
         @Override
@@ -250,7 +253,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         @Override
         public void onSuccess(BlockchainState result) {
             blockchainState = result;
-            walletClient.getGuiThreadExecutor().execute(updateViewTask);
+            guiThreadExecutor.execute(updateViewTask);
         }
 
         @Override
@@ -266,7 +269,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
             String currencyCode = walletClient.getConfiguration().getExchangeCurrencyCode();
             if(ratesMap.containsKey(currencyCode)) {
                 exchangeRate = ratesMap.get(currencyCode);
-                walletClient.getGuiThreadExecutor().execute(updateViewTask);
+                guiThreadExecutor.execute(updateViewTask);
             } else {
                 log.warn("Failed to get exchange rate for {} ", currencyCode);
             }

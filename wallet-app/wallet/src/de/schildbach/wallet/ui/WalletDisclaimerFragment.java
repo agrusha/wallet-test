@@ -19,9 +19,6 @@ package de.schildbach.wallet.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.LoaderManager;
-import android.app.LoaderManager.LoaderCallbacks;
-import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
@@ -34,12 +31,16 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.gowiper.utils.observers.Observer;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.service.BlockchainState;
 import de.schildbach.wallet.service.BlockchainState.Impediment;
-import de.schildbach.wallet.service.BlockchainStateLoader;
+import de.schildbach.wallet.wallet.BlockchainStateController;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.CheckForNull;
 import java.util.Set;
@@ -47,17 +48,20 @@ import java.util.Set;
 /**
  * @author Andreas Schildbach
  */
-public final class WalletDisclaimerFragment extends Fragment implements OnSharedPreferenceChangeListener {
-    private Activity activity;
+
+@Slf4j
+public final class WalletDisclaimerFragment extends Fragment implements OnSharedPreferenceChangeListener, Observer<BlockchainStateController> {
+    private WalletActivity activity;
     private Configuration config;
-    private LoaderManager loaderManager;
+    private BlockchainStateController blockchainStateController;
+
+    private BlockchainStateUpdate blockchainStateUpdate = new BlockchainStateUpdate();
+    private UpdateViewTask updateViewTask = new UpdateViewTask();
 
     @CheckForNull
     private BlockchainState blockchainState = null;
 
     private TextView messageView;
-
-    private static final int ID_BLOCKCHAIN_STATE_LOADER = 0;
 
     @Override
     public void onAttach(final Activity activity) {
@@ -66,7 +70,7 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
         this.activity = (WalletActivity) activity;
         final WalletApplication application = (WalletApplication) activity.getApplication();
         this.config = application.getWalletClient().getConfiguration();
-        this.loaderManager = getLoaderManager();
+        this.blockchainStateController = this.activity.getWalletClient().getBlockchainManager().getBlockchainStateController();
     }
 
     @Override
@@ -77,10 +81,11 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
             @Override
             public void onClick(final View v) {
                 final boolean showBackup = config.remindBackup();
-                if (showBackup)
-                    ((WalletActivity) activity).handleBackupWallet();
-                else
+                if (showBackup) {
+                    activity.handleBackupWallet();
+                } else {
                     HelpDialogFragment.page(getFragmentManager(), R.string.help_safety);
+                }
             }
         });
 
@@ -92,16 +97,15 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
         super.onResume();
 
         config.registerOnSharedPreferenceChangeListener(this);
+        blockchainStateController.addObserver(this);
 
-        loaderManager.initLoader(ID_BLOCKCHAIN_STATE_LOADER, null, blockchainStateLoaderCallbacks);
-
+        updateData();
         updateView();
     }
 
     @Override
     public void onPause() {
-        loaderManager.destroyLoader(ID_BLOCKCHAIN_STATE_LOADER);
-
+        blockchainStateController.removeObserver(this);
         config.unregisterOnSharedPreferenceChangeListener(this);
 
         super.onPause();
@@ -109,13 +113,15 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
 
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences, final String key) {
-        if (Configuration.PREFS_KEY_DISCLAIMER.equals(key) || Configuration.PREFS_KEY_REMIND_BACKUP.equals(key))
+        if (Configuration.PREFS_KEY_DISCLAIMER.equals(key) || Configuration.PREFS_KEY_REMIND_BACKUP.equals(key)) {
             updateView();
+        }
     }
 
     private void updateView() {
-        if (!isResumed())
+        if (!isResumed()) {
             return;
+        }
 
         final boolean showBackup = config.remindBackup();
         final boolean showDisclaimer = config.getDisclaimerEnabled();
@@ -130,16 +136,21 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
         }
 
         final SpannableStringBuilder text = new SpannableStringBuilder();
-        if (progressResId != 0)
+        if (progressResId != 0) {
             text.append(Html.fromHtml("<b>" + getString(progressResId) + "</b>"));
-        if (progressResId != 0 && (showBackup || showDisclaimer))
+        }
+        if (progressResId != 0 && (showBackup || showDisclaimer)) {
             text.append('\n');
-        if (showBackup)
+        }
+        if (showBackup) {
             text.append(Html.fromHtml(getString(R.string.wallet_disclaimer_fragment_remind_backup)));
-        if (showBackup && showDisclaimer)
+        }
+        if (showBackup && showDisclaimer) {
             text.append('\n');
-        if (showDisclaimer)
+        }
+        if (showDisclaimer) {
             text.append(Html.fromHtml(getString(R.string.wallet_disclaimer_fragment_remind_safety)));
+        }
         messageView.setText(text);
 
         final View view = getView();
@@ -148,21 +159,33 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
         fragment.setVisibility(text.length() > 0 ? View.VISIBLE : View.GONE);
     }
 
-    private final LoaderCallbacks<BlockchainState> blockchainStateLoaderCallbacks = new LoaderManager.LoaderCallbacks<BlockchainState>() {
+    private void updateData() {
+        Futures.addCallback(blockchainStateController.loadBlockchainState(), blockchainStateUpdate);
+    }
+
+    @Override
+    public void handleUpdate(BlockchainStateController updatedObject) {
+        updateData();
+    }
+
+    private class BlockchainStateUpdate implements FutureCallback<BlockchainState> {
         @Override
-        public Loader<BlockchainState> onCreateLoader(final int id, final Bundle args) {
-            return new BlockchainStateLoader(activity);
+        public void onSuccess(BlockchainState result) {
+            blockchainState = result;
+
+            activity.getWalletClient().getGuiThreadExecutor().execute(updateViewTask);
         }
 
         @Override
-        public void onLoadFinished(final Loader<BlockchainState> loader, final BlockchainState blockchainState) {
-            WalletDisclaimerFragment.this.blockchainState = blockchainState;
+        public void onFailure(Throwable t) {
+             log.error("Failed to get blockchain state update ", t);
+        }
+    }
 
+    private class UpdateViewTask implements Runnable {
+        @Override
+        public void run() {
             updateView();
         }
-
-        @Override
-        public void onLoaderReset(final Loader<BlockchainState> loader) {
-        }
-    };
+    }
 }

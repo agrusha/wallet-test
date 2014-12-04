@@ -35,13 +35,17 @@ import android.widget.ResourceCursorAdapter;
 import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.gowiper.utils.observers.Observer;
 import de.schildbach.wallet.*;
-import de.schildbach.wallet.ExchangeRate;
 import de.schildbach.wallet.service.BlockchainState;
-import de.schildbach.wallet.service.BlockchainStateLoader;
+import de.schildbach.wallet.util.GuiThreadExecutor;
 import de.schildbach.wallet.util.WholeStringBuilder;
+import de.schildbach.wallet.wallet.BlockchainManager;
 import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.core.Wallet.BalanceType;
@@ -51,13 +55,22 @@ import javax.annotation.CheckForNull;
 /**
  * @author Andreas Schildbach
  */
-public final class ExchangeRatesFragment extends FancyListFragment implements OnSharedPreferenceChangeListener {
+
+@Slf4j
+public final class ExchangeRatesFragment extends FancyListFragment implements OnSharedPreferenceChangeListener,
+        Observer<BlockchainManager> {
     private AbstractWalletActivity activity;
     private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private Uri contentUri;
     private LoaderManager loaderManager;
+
+    private BlockchainManager blockchainManager;
+    private GuiThreadExecutor guiThreadExecutor;
+    private final UpdateViewTask updateViewTask = new UpdateViewTask();
+    private final BalanceUpdate balanceUpdate = new BalanceUpdate();
+    private final BlockchainStateUpdate blockchainStateUpdate = new BlockchainStateUpdate();
 
     private ExchangeRatesAdapter adapter;
     private String query = null;
@@ -68,9 +81,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     @CheckForNull
     private String defaultCurrency = null;
 
-    private static final int ID_BALANCE_LOADER = 0;
     private static final int ID_RATE_LOADER = 1;
-    private static final int ID_BLOCKCHAIN_STATE_LOADER = 2;
 
     @Override
     public void onAttach(final Activity activity) {
@@ -82,6 +93,9 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         this.wallet = walletClient.getWallet();
         this.contentUri = ExchangeRatesProvider.contentUri(activity.getPackageName(), false);
         this.loaderManager = getLoaderManager();
+
+        this.blockchainManager = walletClient.getBlockchainManager();
+        this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
 
     @Override
@@ -111,16 +125,15 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     public void onResume() {
         super.onResume();
 
-        loaderManager.initLoader(ID_BALANCE_LOADER, null, balanceLoaderCallbacks);
-        loaderManager.initLoader(ID_BLOCKCHAIN_STATE_LOADER, null, blockchainStateLoaderCallbacks);
+        blockchainManager.addObserver(this);
 
+        updateData();
         updateView();
     }
 
     @Override
     public void onPause() {
-        loaderManager.destroyLoader(ID_BALANCE_LOADER);
-        loaderManager.destroyLoader(ID_BLOCKCHAIN_STATE_LOADER);
+        blockchainManager.removeObserver(this);
 
         super.onPause();
     }
@@ -230,6 +243,11 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         }
     }
 
+    private void updateData() {
+        Futures.addCallback(blockchainManager.loadBalance(), balanceUpdate, guiThreadExecutor);
+        Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
+    }
+
     private final LoaderCallbacks<Cursor> rateLoaderCallbacks = new LoaderManager.LoaderCallbacks<Cursor>() {
         @Override
         public Loader<Cursor> onCreateLoader(final int id, final Bundle args) {
@@ -270,41 +288,10 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         }
     };
 
-    private final LoaderCallbacks<Coin> balanceLoaderCallbacks = new LoaderManager.LoaderCallbacks<Coin>() {
-        @Override
-        public Loader<Coin> onCreateLoader(final int id, final Bundle args) {
-            return new WalletBalanceLoader(activity, wallet);
-        }
-
-        @Override
-        public void onLoadFinished(final Loader<Coin> loader, final Coin balance) {
-            ExchangeRatesFragment.this.balance = balance;
-
-            updateView();
-        }
-
-        @Override
-        public void onLoaderReset(final Loader<Coin> loader) {
-        }
-    };
-
-    private final LoaderCallbacks<BlockchainState> blockchainStateLoaderCallbacks = new LoaderManager.LoaderCallbacks<BlockchainState>() {
-        @Override
-        public Loader<BlockchainState> onCreateLoader(final int id, final Bundle args) {
-            return new BlockchainStateLoader(activity);
-        }
-
-        @Override
-        public void onLoadFinished(final Loader<BlockchainState> loader, final BlockchainState blockchainState) {
-            ExchangeRatesFragment.this.blockchainState = blockchainState;
-
-            updateView();
-        }
-
-        @Override
-        public void onLoaderReset(final Loader<BlockchainState> loader) {
-        }
-    };
+    @Override
+    public void handleUpdate(BlockchainManager updatedObject) {
+        updateData();
+    }
 
     private final class ExchangeRatesAdapter extends ResourceCursorAdapter {
         private Coin rateBase = Coin.COIN;
@@ -346,6 +333,39 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
                 walletView.setStrikeThru(false);
             }
             walletView.setTextColor(getResources().getColor(R.color.fg_less_significant));
+        }
+    }
+
+    private class UpdateViewTask implements Runnable {
+        @Override
+        public void run() {
+            updateView();
+        }
+    }
+
+    private class BalanceUpdate implements FutureCallback<Coin> {
+        @Override
+        public void onSuccess(Coin result) {
+            balance = result;
+            guiThreadExecutor.execute(updateViewTask);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            log.error("Failed to get balance update ", t);
+        }
+    }
+
+    private class BlockchainStateUpdate implements FutureCallback<BlockchainState> {
+        @Override
+        public void onSuccess(BlockchainState result) {
+            blockchainState = result;
+            guiThreadExecutor.execute(updateViewTask);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            log.error("Failed to get blockchain update ", t);
         }
     }
 }

@@ -28,6 +28,7 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * @author Andreas Schildbach
  */
+@Deprecated
 public class BlockchainStateLoader extends AsyncTaskLoader<BlockchainState> {
     private final LocalBroadcastManager broadcastManager;
     private BlockchainService service;
