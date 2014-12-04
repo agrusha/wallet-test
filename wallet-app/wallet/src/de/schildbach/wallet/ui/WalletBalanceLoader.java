@@ -19,7 +19,7 @@ package de.schildbach.wallet.ui;
 
 import android.content.*;
 import android.support.v4.content.LocalBroadcastManager;
-import de.schildbach.wallet.BlockchainServiceController;
+import de.schildbach.wallet.wallet.BlockchainServiceController;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Coin;

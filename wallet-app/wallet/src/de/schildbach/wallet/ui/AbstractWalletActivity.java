@@ -23,7 +23,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import lombok.Getter;
 import org.slf4j.Logger;

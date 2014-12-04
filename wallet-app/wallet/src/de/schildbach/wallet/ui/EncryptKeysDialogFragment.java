@@ -36,7 +36,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import com.google.protobuf.ByteString;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.crypto.KeyCrypter;

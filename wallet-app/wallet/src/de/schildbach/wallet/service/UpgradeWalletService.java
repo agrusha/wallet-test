@@ -21,7 +21,7 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Wallet;
 

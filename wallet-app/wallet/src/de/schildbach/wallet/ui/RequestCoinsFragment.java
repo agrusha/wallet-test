@@ -46,6 +46,7 @@ import de.schildbach.wallet.util.BitmapFragment;
 import de.schildbach.wallet.util.Bluetooth;
 import de.schildbach.wallet.util.Nfc;
 import de.schildbach.wallet.util.Qr;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;

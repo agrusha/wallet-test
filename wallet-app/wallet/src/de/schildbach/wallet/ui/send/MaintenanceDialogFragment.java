@@ -35,7 +35,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import com.google.common.util.concurrent.ListenableFuture;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet.ui.AbstractWalletActivity;
 import de.schildbach.wallet.ui.DialogBuilder;
 import de.schildbach.wallet_test.R;

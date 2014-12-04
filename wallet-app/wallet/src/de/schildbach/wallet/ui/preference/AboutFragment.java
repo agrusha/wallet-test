@@ -25,7 +25,7 @@ import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.VersionMessage;
 

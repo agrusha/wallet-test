@@ -36,6 +36,7 @@ import de.schildbach.wallet.*;
 import de.schildbach.wallet.ExchangeRatesProvider.ExchangeRate;
 import de.schildbach.wallet.service.BlockchainState;
 import de.schildbach.wallet.service.BlockchainStateLoader;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Wallet;

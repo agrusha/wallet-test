@@ -55,8 +55,9 @@ public final class ExchangeRateLoader extends CursorLoader implements OnSharedPr
 
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences, final String key) {
-        if (Configuration.PREFS_KEY_EXCHANGE_CURRENCY.equals(key))
+        if (Configuration.PREFS_KEY_EXCHANGE_CURRENCY.equals(key)) {
             onCurrencyChange();
+        }
     }
 
     private void onCurrencyChange() {

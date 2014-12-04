@@ -29,6 +29,7 @@ import android.text.format.DateUtils;
 import com.google.common.base.Charsets;
 import de.schildbach.wallet.util.GenericUtils;
 import de.schildbach.wallet.util.Io;
+import de.schildbach.wallet.wallet.WalletClient;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.utils.Fiat;
 import org.json.JSONObject;

@@ -1,4 +1,4 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import android.content.ComponentName;
 import android.content.Context;

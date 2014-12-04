@@ -1,4 +1,4 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import android.content.SharedPreferences;
 import android.text.format.DateUtils;
@@ -10,6 +10,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.utils.observers.Observable;
 import com.gowiper.utils.observers.ObservableDelegate;
+import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
 import lombok.Delegate;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class TransactionController implements Observable<TransactionController> 
         this.loadingController = new LoadingController<TransactionLoader, List<Transaction>>(client.getApplicationContext(),
                 new TransactionLoader(wallet, client.getBackgroundExecutor()),
                 BlockchainServiceController.ACTION_WALLET_CHANGED);
-
+        this.loadingController.addObserver(observableDelegate);
         Configuration config = client.getConfiguration();
         config.registerOnSharedPreferenceChangeListener(new PreferencesListener());
 

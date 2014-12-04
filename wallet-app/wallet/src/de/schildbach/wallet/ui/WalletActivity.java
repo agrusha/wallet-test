@@ -48,7 +48,7 @@ import android.widget.TextView;
 import com.google.common.base.Charsets;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.data.InputParser.BinaryInputParser;
 import de.schildbach.wallet.data.InputParser.StringInputParser;

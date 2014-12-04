@@ -1,4 +1,4 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;

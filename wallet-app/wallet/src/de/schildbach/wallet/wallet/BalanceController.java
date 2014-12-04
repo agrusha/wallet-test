@@ -1,4 +1,4 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.utils.observers.Observable;
@@ -19,13 +19,13 @@ public class BalanceController implements Observable<BalanceController>{
 
     public BalanceController(WalletClient client) {
         Wallet wallet = client.getWallet();
-        loadingController = new LoadingController<BalanceLoader, Coin>(
+        this.loadingController = new LoadingController<BalanceLoader, Coin>(
                 client.getApplicationContext(),
                 new BalanceLoader(wallet, client.getBackgroundExecutor()),
                 BlockchainServiceController.ACTION_WALLET_CHANGED );
-
+        this.loadingController.addObserver(observableDelegate);
         wallet.addEventListener(new WalletBalanceChangeListener());
-        loadingController.load();
+        this.loadingController.load();
     }
 
     public ListenableFuture<Coin> loadBalance() {

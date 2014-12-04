@@ -19,6 +19,7 @@ package de.schildbach.wallet;
 
 import android.app.Application;
 import android.os.StrictMode;
+import de.schildbach.wallet.wallet.WalletClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

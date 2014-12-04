@@ -1,5 +1,6 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
+import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.service.BlockchainService;
 
 public interface BlockchainServiceController {

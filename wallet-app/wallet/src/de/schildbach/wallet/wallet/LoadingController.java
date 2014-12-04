@@ -1,4 +1,4 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -28,8 +28,10 @@ public class LoadingController<Loader extends AbstractLoader<Type>, Type> implem
     public LoadingController(Context context, Loader loader, String broadcastAction) {
         this.loader = loader;
 
-        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(context.getApplicationContext());
-        broadcastManager.registerReceiver(new BroadcastListener(), new IntentFilter(broadcastAction));
+        if (broadcastAction != null) {
+            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(context.getApplicationContext());
+            broadcastManager.registerReceiver(new BroadcastListener(), new IntentFilter(broadcastAction));
+        }
     }
 
     protected ListenableFuture<Type> loadData() {

@@ -1,7 +1,9 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import android.content.Context;
 import android.text.format.DateUtils;
+import de.schildbach.wallet.Configuration;
+import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.util.Io;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

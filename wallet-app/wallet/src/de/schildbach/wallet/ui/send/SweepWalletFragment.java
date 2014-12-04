@@ -21,7 +21,7 @@ import android.widget.TextView;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.WalletClient;
+import de.schildbach.wallet.wallet.WalletClient;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.*;
 import de.schildbach.wallet.data.InputParser.StringInputParser;

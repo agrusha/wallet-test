@@ -1,4 +1,4 @@
-package de.schildbach.wallet;
+package de.schildbach.wallet.wallet;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
@@ -12,6 +12,8 @@ import android.text.format.DateUtils;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.gowiper.utils.SimpleThreadFactory;
+import de.schildbach.wallet.Configuration;
+import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
 import de.schildbach.wallet.util.CrashReporter;
@@ -39,7 +41,7 @@ public class WalletClient {
     @Delegate private final BlockchainServiceController blockchainServiceController;
     private final WalletController walletController;
     @Getter private final TransactionController transactionController;
-    @Getter private final BalanceController balanceController;
+    @Getter private final BlockchainManager blockchainManager;
     @Getter private final ListeningScheduledExecutorService backgroundExecutor;
     @Getter private final GuiThreadExecutor guiThreadExecutor;
     private PackageInfo packageInfo;
@@ -59,7 +61,7 @@ public class WalletClient {
 
         this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration);
         this.transactionController = new TransactionController(this);
-        this.balanceController = new BalanceController(this);
+        this.blockchainManager = new BlockchainManagerImpl(this);
 
         this.configuration.updateLastVersionCode(packageInfo.versionCode);
     }
