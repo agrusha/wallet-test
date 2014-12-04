@@ -56,12 +56,12 @@ import java.util.List;
 /**
  * @author Andreas Schildbach
  */
-public class TransactionsListFragment extends FancyListFragment implements Observer<TransactionManager> {
+public class TransactionsListFragment extends FancyListFragment implements Observer<TransactionController> {
     private AbstractWalletActivity activity;
     private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
-    private TransactionManager transactionManager;
+    private TransactionController transactionController;
     private ContentResolver resolver;
     private TransactionsListAdapter adapter;
     private GuiThreadExecutor guiThreadExecutor;
@@ -101,7 +101,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.wallet = walletClient.getWallet();
-        this.transactionManager = walletClient.getTransactionManager();
+        this.transactionController = walletClient.getTransactionController();
         this.resolver = activity.getContentResolver();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
@@ -126,7 +126,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
 
         resolver.registerContentObserver(AddressBookProvider.contentUri(activity.getPackageName()), true, addressBookObserver);
 
-        transactionManager.addObserver(this);
+        transactionController.addObserver(this);
         loadTransactions();
 
         updateView();
@@ -135,7 +135,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
     @Override
     public void onPause() {
 
-        transactionManager.removeObserver(this);
+        transactionController.removeObserver(this);
 
         resolver.unregisterContentObserver(addressBookObserver);
 
@@ -156,12 +156,12 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
     }
 
     @Override
-    public void handleUpdate(TransactionManager updatedObject) {
+    public void handleUpdate(TransactionController updatedObject) {
         guiThreadExecutor.execute(updateViewTask);
     }
 
     private void loadTransactions() {
-        Futures.addCallback(transactionManager.loadTransactions(direction), loadingCallBack);
+        Futures.addCallback(transactionController.loadTransactions(direction), loadingCallBack);
     }
 
     private void handleTransactionClick(@Nonnull final Transaction tx) {

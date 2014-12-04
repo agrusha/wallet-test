@@ -1,43 +1,29 @@
 package de.schildbach.wallet;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionConfidence;
 import org.bitcoinj.core.Wallet;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 
-public class TransactionLoader {
+public class TransactionLoader extends AbstractLoader<List<Transaction>> {
 
     private final Wallet wallet;
-    private final ListeningScheduledExecutorService backgroundExecutor;
-    private final LoadTransactionsTask loadTransactionsTask = new LoadTransactionsTask();
     private final TransactionComparator transactionComparator = new TransactionComparator();
 
     public TransactionLoader(Wallet wallet, ListeningScheduledExecutorService backgroundExecutor) {
+        super(backgroundExecutor);
         this.wallet = wallet;
-        this.backgroundExecutor = backgroundExecutor;
     }
 
-    public ListenableFuture<List<Transaction>> loadTransactions() {
-        return backgroundExecutor.submit(loadTransactionsTask);
-    }
-
-    private List<Transaction> getTransactions() {
+    @Override
+    protected List<Transaction> getData() {
         final Set<Transaction> transactions = wallet.getTransactions(true);
         final List<Transaction> transactionsList = new ArrayList<Transaction>(transactions);
         Collections.sort(transactionsList, transactionComparator);
 
         return transactionsList;
-    }
-
-    private class LoadTransactionsTask implements Callable<List<Transaction>>{
-        @Override
-        public List<Transaction> call() throws Exception {
-            return getTransactions();
-        }
     }
 
     private static class TransactionComparator implements Comparator<Transaction> {

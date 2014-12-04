@@ -38,8 +38,10 @@ public class WalletClient {
     @Getter private final Configuration configuration;
     @Delegate private final BlockchainServiceController blockchainServiceController;
     private final WalletController walletController;
-    @Getter private final TransactionManager transactionManager;
+    @Getter private final TransactionController transactionController;
+    @Getter private final BalanceController balanceController;
     @Getter private final ListeningScheduledExecutorService backgroundExecutor;
+    @Getter private final GuiThreadExecutor guiThreadExecutor;
     private PackageInfo packageInfo;
 
     public WalletClient(Context context) {
@@ -50,12 +52,14 @@ public class WalletClient {
         this.packageInfo = packageInfoFromContext(applicationContext);
         this.backgroundExecutor = MoreExecutors.listeningDecorator(
                 Executors.newScheduledThreadPool(2, SimpleThreadFactory.create("Scheduler", true)));
+        this.guiThreadExecutor = GuiThreadExecutor.getInstance();
         this.configuration = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
         this.activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
         this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());
 
         this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration);
-        this.transactionManager = new TransactionManagerImpl(this);
+        this.transactionController = new TransactionController(this);
+        this.balanceController = new BalanceController(this);
 
         this.configuration.updateLastVersionCode(packageInfo.versionCode);
     }
@@ -82,10 +86,6 @@ public class WalletClient {
 
     public Wallet getWallet() {
         return walletController.getWallet();
-    }
-
-    public GuiThreadExecutor getGuiThreadExecutor() {
-        return GuiThreadExecutor.getInstance();
     }
 
     public void saveWallet() {

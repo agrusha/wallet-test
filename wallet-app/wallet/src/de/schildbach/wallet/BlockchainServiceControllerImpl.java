@@ -1,16 +1,23 @@
 package de.schildbach.wallet;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.service.BlockchainServiceImpl;
+import lombok.Getter;
 
 public class BlockchainServiceControllerImpl implements BlockchainServiceController {
     private final Context applicationContext;
     private final Intent blockchainServiceIntent;
     private final Intent blockchainServiceCancelCoinsReceivedIntent;
     private final Intent blockchainServiceResetBlockchainIntent;
+
+    @Getter private BlockchainService blockchainService;
+    private final BlockchainServiceConnection serviceConnection = new BlockchainServiceConnection();
 
     public BlockchainServiceControllerImpl(Context context) {
         this.applicationContext = context;
@@ -28,6 +35,8 @@ public class BlockchainServiceControllerImpl implements BlockchainServiceControl
         } else {
             applicationContext.startService(blockchainServiceIntent);
         }
+
+        applicationContext.bindService(new Intent(applicationContext, BlockchainServiceImpl.class), serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -42,5 +51,17 @@ public class BlockchainServiceControllerImpl implements BlockchainServiceControl
         final Intent broadcast = new Intent(ACTION_WALLET_CHANGED);
         broadcast.setPackage(applicationContext.getPackageName());
         LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(broadcast);
+    }
+
+    private class BlockchainServiceConnection implements ServiceConnection{
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            blockchainService = ((BlockchainServiceImpl.LocalBinder) service).getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            blockchainService = null;
+        }
     }
 }
