@@ -43,7 +43,7 @@ import android.view.View.OnFocusChangeListener;
 import android.widget.*;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import de.schildbach.wallet.*;
-import de.schildbach.wallet.ExchangeRatesProvider.ExchangeRate;
+import de.schildbach.wallet.ExchangeRate;
 import de.schildbach.wallet.data.AddressAndLabel;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.data.PaymentIntent.Standard;

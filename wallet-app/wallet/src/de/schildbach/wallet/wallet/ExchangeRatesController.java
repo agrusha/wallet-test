@@ -5,19 +5,20 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.utils.observers.Observable;
 import com.gowiper.utils.observers.ObservableDelegate;
 import de.schildbach.wallet.Configuration;
+import de.schildbach.wallet.ExchangeRate;
 import lombok.Delegate;
 
 import java.util.Map;
 
 public class ExchangeRatesController implements Observable<ExchangeRatesController>{
     @Delegate
-    ObservableDelegate<ExchangeRatesController, LoadingController<ExchangeRatesLoader, Map<String, ExchangeRatesLoader.ExchangeRate>>> observableDelegate =
-            new ObservableDelegate<ExchangeRatesController, LoadingController<ExchangeRatesLoader, Map<String, ExchangeRatesLoader.ExchangeRate>>>(this);
+    ObservableDelegate<ExchangeRatesController, LoadingController<ExchangeRatesLoader, Map<String, ExchangeRate>>> observableDelegate =
+            new ObservableDelegate<ExchangeRatesController, LoadingController<ExchangeRatesLoader, Map<String, ExchangeRate>>>(this);
 
-    private final LoadingController<ExchangeRatesLoader, Map<String, ExchangeRatesLoader.ExchangeRate>> loadingController;
+    private final LoadingController<ExchangeRatesLoader, Map<String, ExchangeRate>> loadingController;
 
     public ExchangeRatesController(WalletClient client) {
-        this.loadingController = new LoadingController<ExchangeRatesLoader, Map<String, ExchangeRatesLoader.ExchangeRate>>(
+        this.loadingController = new LoadingController<ExchangeRatesLoader, Map<String, ExchangeRate>>(
                 client.getApplicationContext(),
                 new ExchangeRatesLoader(client),
                 null);
@@ -27,7 +28,7 @@ public class ExchangeRatesController implements Observable<ExchangeRatesControll
         configuration.registerOnSharedPreferenceChangeListener(new PrefsCurrencyChangeListener());
     }
 
-    public ListenableFuture<Map<String, ExchangeRatesLoader.ExchangeRate>> loadExchangeRate() {
+    public ListenableFuture<Map<String, ExchangeRate>> loadExchangeRate() {
         return loadingController.loadData();
     }
 

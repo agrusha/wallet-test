@@ -2,6 +2,7 @@ package de.schildbach.wallet.wallet;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.utils.observers.ObservableDelegate;
+import de.schildbach.wallet.ExchangeRate;
 import de.schildbach.wallet.service.BlockchainState;
 import lombok.Delegate;
 import lombok.Getter;
@@ -43,7 +44,7 @@ public class BlockchainManagerImpl implements BlockchainManager{
     }
 
     @Override
-    public ListenableFuture<Map<String, ExchangeRatesLoader.ExchangeRate>> loadExchangeRate() {
+    public ListenableFuture<Map<String, ExchangeRate>> loadExchangeRate() {
         return exchangeRatesController.loadExchangeRate();
     }
 }

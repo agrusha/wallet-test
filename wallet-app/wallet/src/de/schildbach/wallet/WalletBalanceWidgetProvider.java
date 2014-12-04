@@ -30,7 +30,6 @@ import android.text.Spannable;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.RemoteViews;
-import de.schildbach.wallet.ExchangeRatesProvider.ExchangeRate;
 import de.schildbach.wallet.ui.RequestCoinsActivity;
 import de.schildbach.wallet.ui.SendCoinsQrActivity;
 import de.schildbach.wallet.ui.WalletActivity;

@@ -39,7 +39,7 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 import de.schildbach.wallet.*;
-import de.schildbach.wallet.ExchangeRatesProvider.ExchangeRate;
+import de.schildbach.wallet.ExchangeRate;
 import de.schildbach.wallet.offline.AcceptBluetoothService;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.util.BitmapFragment;

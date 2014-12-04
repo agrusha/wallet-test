@@ -5,8 +5,8 @@ import android.text.format.DateUtils;
 import com.google.common.base.Charsets;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
+import de.schildbach.wallet.ExchangeRate;
 import de.schildbach.wallet.util.Io;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.utils.Fiat;
 import org.json.JSONObject;
@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 @Slf4j
-public class ExchangeRatesLoader extends AbstractLoader<Map<String,ExchangeRatesLoader.ExchangeRate>> {
+public class ExchangeRatesLoader extends AbstractLoader<Map<String,ExchangeRate>> {
     private static final URL BITCOINAVERAGE_URL;
     private static final String[] BITCOINAVERAGE_FIELDS = new String[]{"24h_avg", "last"};
     private static final String BITCOINAVERAGE_SOURCE = "BitcoinAverage.com";
@@ -49,12 +49,11 @@ public class ExchangeRatesLoader extends AbstractLoader<Map<String,ExchangeRates
         this.config = client.getConfiguration();
         this.userAgent = WalletClient.httpUserAgent(WalletClient.packageInfoFromContext(context).versionName);
 
-        //todo uncover
-//        final ExchangeRate cachedExchangeRate = config.getCachedExchangeRate();
-//        if (cachedExchangeRate != null) {
-//            exchangeRates = new TreeMap<String, ExchangeRate>();
-//            exchangeRates.put(cachedExchangeRate.getCurrencyCode(), cachedExchangeRate);
-//        }
+        final ExchangeRate cachedExchangeRate = config.getCachedExchangeRate();
+        if (cachedExchangeRate != null) {
+            exchangeRates = new TreeMap<String, ExchangeRate>();
+            exchangeRates.put(cachedExchangeRate.getCurrencyCode(), cachedExchangeRate);
+        }
     }
 
 
@@ -74,8 +73,7 @@ public class ExchangeRatesLoader extends AbstractLoader<Map<String,ExchangeRates
 
             final ExchangeRate exchangeRateToCache = bestExchangeRate(config.getExchangeCurrencyCode());
             if (exchangeRateToCache != null) {
-                // TODO uncover it after removing original ExchangeRateProvider
-//                config.setCachedExchangeRate(exchangeRateToCache);
+                config.setCachedExchangeRate(exchangeRateToCache);
             }
         }
 
@@ -185,20 +183,5 @@ public class ExchangeRatesLoader extends AbstractLoader<Map<String,ExchangeRates
         }
 
         return null;
-    }
-
-    @RequiredArgsConstructor(suppressConstructorProperties = true)
-    public static class ExchangeRate {
-        public final org.bitcoinj.utils.ExchangeRate rate;
-        public final String source;
-
-        public String getCurrencyCode() {
-            return rate.fiat.currencyCode;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + '[' + rate.fiat + ']';
-        }
     }
 }
