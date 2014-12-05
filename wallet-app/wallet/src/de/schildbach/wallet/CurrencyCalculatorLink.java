@@ -15,9 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.schildbach.wallet.ui;
+package de.schildbach.wallet;
 
 import android.view.View;
+import de.schildbach.wallet.ui.CurrencyAmountView;
 import de.schildbach.wallet.ui.CurrencyAmountView.Listener;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.utils.ExchangeRate;
@@ -42,19 +43,22 @@ public final class CurrencyCalculatorLink {
     private final CurrencyAmountView.Listener btcAmountViewListener = new CurrencyAmountView.Listener() {
         @Override
         public void changed() {
-            if (btcAmountView.getAmount() != null)
+            if (btcAmountView.getAmount() != null) {
                 setExchangeDirection(true);
-            else
+            } else {
                 localAmountView.setHint(null);
+            }
 
-            if (listener != null)
+            if (listener != null) {
                 listener.changed();
+            }
         }
 
         @Override
         public void focusChanged(final boolean hasFocus) {
-            if (listener != null)
+            if (listener != null) {
                 listener.focusChanged(hasFocus);
+            }
         }
     };
 
@@ -167,10 +171,11 @@ public final class CurrencyCalculatorLink {
     }
 
     public View activeTextView() {
-        if (exchangeDirection)
+        if (exchangeDirection) {
             return btcAmountView.getTextView();
-        else
+        } else {
             return localAmountView.getTextView();
+        }
     }
 
     public void requestFocus() {

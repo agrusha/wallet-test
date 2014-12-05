@@ -314,8 +314,9 @@ public final class SendCoinsFragment extends Fragment {
                 data.moveToFirst();
                 final ExchangeRate exchangeRate = ExchangeRatesProvider.getExchangeRate(data);
 
-                if (state == State.INPUT)
+                if (state == State.INPUT) {
                     amountCalculatorLink.setExchangeRate(exchangeRate.rate);
+                }
             }
         }
 

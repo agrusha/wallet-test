@@ -237,10 +237,11 @@ public final class CurrencyAmountView extends FrameLayout {
         try {
             if (!str.isEmpty()) {
                 final Monetary amount;
-                if (localCurrencyCode == null)
+                if (localCurrencyCode == null) {
                     amount = inputFormat.parse(str);
-                else
+                } else {
                     amount = inputFormat.parseFiat(localCurrencyCode, str);
+                }
 
                 // exactly zero
                 return zeroIsValid || amount.signum() > 0;
@@ -336,20 +337,23 @@ public final class CurrencyAmountView extends FrameLayout {
         @Override
         public void onTextChanged(final CharSequence s, final int start, final int before, final int count) {
             updateAppearance();
-            if (listener != null && fire)
+            if (listener != null && fire) {
                 listener.changed();
+            }
         }
 
         @Override
         public void onFocusChange(final View v, final boolean hasFocus) {
             if (!hasFocus) {
                 final Monetary amount = getAmount();
-                if (amount != null)
+                if (amount != null) {
                     setAmount(amount, false);
+                }
             }
 
-            if (listener != null && fire)
+            if (listener != null && fire) {
                 listener.focusChanged(hasFocus);
+            }
         }
     }
 }

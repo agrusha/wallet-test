@@ -136,7 +136,9 @@ public class Configuration {
     }
 
     public String getExchangeCurrencyCode() {
-        return prefs.getString(PREFS_KEY_EXCHANGE_CURRENCY, null);
+        return prefs.getString(PREFS_KEY_EXCHANGE_CURRENCY,
+                prefs.getString(PREFS_KEY_CACHED_EXCHANGE_CURRENCY,
+                        Constants.DEFAULT_EXCHANGE_CURRENCY));
     }
 
     public void setExchangeCurrencyCode(final String exchangeCurrencyCode) {
