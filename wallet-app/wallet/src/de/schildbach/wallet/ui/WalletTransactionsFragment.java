@@ -25,8 +25,8 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import de.schildbach.wallet.wallet.TransactionManager;
-import de.schildbach.wallet.util.ViewPagerTabs;
+import com.gowiper.wallet.controllers.TransactionController;
+import de.schildbach.wallet.ui.util.ViewPagerTabs;
 import de.schildbach.wallet_test.R;
 
 /**
@@ -75,13 +75,13 @@ public final class WalletTransactionsFragment extends Fragment {
 
         @Override
         public Fragment getItem(final int position) {
-            final TransactionManager.Direction direction;
+            final TransactionController.Direction direction;
             if (position == 0)
-                direction = TransactionManager.Direction.RECEIVED;
+                direction = TransactionController.Direction.RECEIVED;
             else if (position == 1)
                 direction = null;
             else if (position == 2)
-                direction = TransactionManager.Direction.SENT;
+                direction = TransactionController.Direction.SENT;
             else
                 throw new IllegalStateException();
 

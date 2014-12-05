@@ -8,7 +8,7 @@
 	android:paddingBottom="2dp"
 	android:paddingTop="2dp" >
 
-	<de.schildbach.wallet.util.CircularProgressView
+	<com.gowiper.wallet.util.CircularProgressView
 		android:id="@+id/transaction_row_confidence_circular"
 		android:layout_width="@dimen/symbol_size_normal"
 		android:layout_height="@dimen/symbol_size_normal"

@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>wallet-app</artifactId>
+        <groupId>com.gowiper.wallet</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>wallet-core</artifactId>
+
+    <properties>
+        <!-- see android packages here: http://search.maven.org/#browse%7C1382000168 -->
+        <android.version>4.1.1.4</android.version>
+        <android.sdk.platform>19</android.sdk.platform>
+        <skipAnalyze>false</skipAnalyze>
+
+
+        <javac.additionalArgs>-Xbootclasspath:${java.home}/lib/rt.jar</javac.additionalArgs>
+        <project.build.debug>true</project.build.debug>
+        <project.build.release>false</project.build.release>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>android-support</id>
+            <url>file://${env.ANDROID_HOME}/extras/android/m2repository</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.gowiper</groupId>
+            <artifactId>core</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.unison.xmpp</groupId>
+                    <artifactId>smack</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.unison.xmpp</groupId>
+                    <artifactId>smackx</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- android.*, java.*, javax.* -->
+        <dependency>
+            <groupId>com.google.android</groupId>
+            <artifactId>android</artifactId>
+            <version>4.1.1.4</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- android.annotation.* -->
+        <dependency>
+            <groupId>com.google.android</groupId>
+            <artifactId>annotations</artifactId>
+            <version>4.1.1.4</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- android.support.v4.*, provided by android-support -->
+        <dependency>
+            <groupId>com.android.support</groupId>
+            <artifactId>support-v4</artifactId>
+            <version>19.1.0</version>
+        </dependency>
+
+        <!-- android.support.v13.*, provided by android-support -->
+        <dependency>
+            <groupId>com.android.support</groupId>
+            <artifactId>support-v13</artifactId>
+            <version>19.1.0</version>
+        </dependency>
+
+        <!-- com.google.bitcoin.* -->
+        <dependency>
+            <groupId>org.bitcoinj</groupId>
+            <artifactId>bitcoinj-core</artifactId>
+            <version>0.12.2</version>
+        </dependency>
+
+        <!-- de.schildbach.wallet.integration.android.* -->
+        <dependency>
+            <groupId>com.gowiper.wallet</groupId>
+            <artifactId>integration-android</artifactId>
+            <version>2.0</version>
+        </dependency>
+
+        <!-- com.google.protobuf.* -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>2.5.0</version>
+        </dependency>
+
+        <!-- com.google.common.* -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0.1</version>
+        </dependency>
+
+        <!-- com.google.zxing.* -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
+        <!-- org.slf4j.* -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.7</version>
+        </dependency>
+
+        <!-- ch.qos.logback.classic.* -->
+        <dependency>
+            <groupId>com.github.tony19</groupId>
+            <artifactId>logback-android-classic</artifactId>
+            <version>1.1.1-3</version>
+        </dependency>
+
+        <!-- ch.qos.logback.core.* -->
+        <dependency>
+            <groupId>com.github.tony19</groupId>
+            <artifactId>logback-android-core</artifactId>
+            <version>1.1.1-3</version>
+        </dependency>
+
+        <!-- compile-time annotations -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>0.12.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- javax.annotation.* -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+
+        <!-- org.junit.* -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!--<build>-->
+        <!--<plugins>-->
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-compiler-plugin</artifactId>-->
+                <!--<version>3.1</version>-->
+                <!--<configuration>-->
+                    <!--<compilerVersion>${java.version}</compilerVersion>-->
+                    <!--<source>${java.version}</source>-->
+                    <!--<target>${java.version}</target>-->
+                    <!--<debug>${project.build.debug}</debug>-->
+                    <!--<optimize>${project.build.release}</optimize>-->
+                    <!--<failOnError>true</failOnError>-->
+                    <!--<showWarnings>true</showWarnings>-->
+                    <!--<showDeprecation>true</showDeprecation>-->
+                    <!--<compilerArgs>-->
+                        <!--<arg>-Werror</arg>-->
+                        <!--<arg>-Xlint:all</arg>-->
+                        <!--<arg>-Xlint:-processing</arg>-->
+                        <!--<arg>${javac.additionalArgs}</arg>-->
+                    <!--</compilerArgs>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
+
+            <!--<plugin>-->
+                <!--<groupId>org.codehaus.mojo</groupId>-->
+                <!--<artifactId>findbugs-maven-plugin</artifactId>-->
+                <!--<version>2.5.2</version>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<phase>compile</phase>-->
+                        <!--<goals><goal>check</goal></goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+                <!--<configuration>-->
+                    <!--<skip>${skipAnalyze}</skip>-->
+                    <!--<xmlOutput>true</xmlOutput>-->
+                    <!--&lt;!&ndash;<excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>&ndash;&gt;-->
+                    <!--<includeFilterFile>findbugs-include.xml</includeFilterFile>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
+            <!--&lt;!&ndash;<plugin>&ndash;&gt;-->
+                <!--&lt;!&ndash;<groupId>org.apache.maven.plugins</groupId>&ndash;&gt;-->
+                <!--&lt;!&ndash;<artifactId>maven-pmd-plugin</artifactId>&ndash;&gt;-->
+                <!--&lt;!&ndash;<version>3.0.1</version>&ndash;&gt;-->
+                <!--&lt;!&ndash;<executions>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<execution>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<phase>validate</phase>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<goals><goal>check</goal></goals>&ndash;&gt;-->
+                    <!--&lt;!&ndash;</execution>&ndash;&gt;-->
+                <!--&lt;!&ndash;</executions>&ndash;&gt;-->
+                <!--&lt;!&ndash;<configuration>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<skip>${skipAnalyze}</skip>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<printFailingErrors>true</printFailingErrors>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<format>xml</format>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<targetJdk>${java.version}</targetJdk>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<rulesets>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<ruleset>pmd-rules.xml</ruleset>&ndash;&gt;-->
+                    <!--&lt;!&ndash;</rulesets>&ndash;&gt;-->
+                <!--&lt;!&ndash;</configuration>&ndash;&gt;-->
+            <!--&lt;!&ndash;</plugin>&ndash;&gt;-->
+        <!--</plugins>-->
+    <!--</build>-->
+
+</project>

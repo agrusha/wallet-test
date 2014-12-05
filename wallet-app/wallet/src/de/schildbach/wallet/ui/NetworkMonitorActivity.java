@@ -24,7 +24,7 @@ import android.os.Bundle;
 import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.MenuItem;
-import de.schildbach.wallet.util.ViewPagerTabs;
+import de.schildbach.wallet.ui.util.ViewPagerTabs;
 import de.schildbach.wallet_test.R;
 
 /**

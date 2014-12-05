@@ -42,21 +42,22 @@ import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.widget.*;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import de.schildbach.wallet.*;
-import de.schildbach.wallet.ExchangeRate;
-import de.schildbach.wallet.data.AddressAndLabel;
-import de.schildbach.wallet.data.PaymentIntent;
-import de.schildbach.wallet.data.PaymentIntent.Standard;
+import com.gowiper.wallet.*;
+import com.gowiper.wallet.data.AddressAndLabel;
+import com.gowiper.wallet.data.ExchangeRate;
+import com.gowiper.wallet.data.PaymentIntent;
+import com.gowiper.wallet.data.PaymentIntent.Standard;
+import com.gowiper.wallet.offline.DirectPaymentTask;
+import com.gowiper.wallet.util.AddressBookProvider;
+import com.gowiper.wallet.util.Bluetooth;
+import com.gowiper.wallet.util.Nfc;
+import com.gowiper.wallet.util.WalletUtils;
 import de.schildbach.wallet.integration.android.BitcoinIntegration;
-import de.schildbach.wallet.offline.DirectPaymentTask;
 import de.schildbach.wallet.ui.*;
-import de.schildbach.wallet.data.InputParser.BinaryInputParser;
-import de.schildbach.wallet.data.InputParser.StreamInputParser;
-import de.schildbach.wallet.data.InputParser.StringInputParser;
-import de.schildbach.wallet.util.Bluetooth;
-import de.schildbach.wallet.util.Nfc;
-import de.schildbach.wallet.util.WalletUtils;
-import de.schildbach.wallet.wallet.WalletClient;
+import de.schildbach.wallet.ui.InputParser.BinaryInputParser;
+import de.schildbach.wallet.ui.InputParser.StreamInputParser;
+import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import de.schildbach.wallet.ui.util.CurrencyCalculatorLink;
 import de.schildbach.wallet_test.R;
 import org.bitcoin.protocols.payments.Protos.Payment;
 import org.bitcoinj.core.*;
@@ -846,9 +847,9 @@ public final class SendCoinsFragment extends Fragment {
                     }
 
                     @Override
-                    public void onFail(final int messageResId, final Object... messageArgs) {
+                    public void onFail(final Object... messageArgs) {
                         final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_direct_payment_failed_title);
-                        dialog.setMessage(paymentIntent.paymentUrl + "\n" + getString(messageResId, messageArgs) + "\n\n"
+                        dialog.setMessage(paymentIntent.paymentUrl + "\n" + getString(R.string.error_http, messageArgs) + "\n\n"
                                 + getString(R.string.send_coins_fragment_direct_payment_failed_msg));
                         dialog.setPositiveButton(R.string.button_retry, new DialogInterface.OnClickListener() {
                             @Override

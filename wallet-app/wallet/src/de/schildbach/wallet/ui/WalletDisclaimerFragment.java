@@ -34,11 +34,11 @@ import android.widget.TextView;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
-import de.schildbach.wallet.Configuration;
-import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.service.BlockchainState;
-import de.schildbach.wallet.service.BlockchainState.Impediment;
-import de.schildbach.wallet.wallet.BlockchainStateController;
+import com.gowiper.wallet.Configuration;
+import com.gowiper.wallet.WalletApplication;
+import com.gowiper.wallet.service.BlockchainState;
+import com.gowiper.wallet.service.BlockchainState.Impediment;
+import com.gowiper.wallet.controllers.BlockchainStateController;
 import de.schildbach.wallet_test.R;
 import lombok.extern.slf4j.Slf4j;
 

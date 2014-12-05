@@ -34,14 +34,17 @@ import android.widget.ListView;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
-import de.schildbach.wallet.*;
-import de.schildbach.wallet.wallet.TransactionController;
-import de.schildbach.wallet.wallet.TransactionManager.Direction;
-import de.schildbach.wallet.util.BitmapFragment;
-import de.schildbach.wallet.util.GuiThreadExecutor;
-import de.schildbach.wallet.util.Qr;
-import de.schildbach.wallet.util.WalletUtils;
-import de.schildbach.wallet.wallet.WalletClient;
+import com.gowiper.wallet.WalletApplication;
+import com.gowiper.wallet.util.AddressBookProvider;
+import com.gowiper.wallet.Configuration;
+import com.gowiper.wallet.Constants;
+import com.gowiper.wallet.controllers.TransactionController;
+import com.gowiper.wallet.controllers.TransactionController.Direction;
+import de.schildbach.wallet.ui.util.BitmapFragment;
+import com.gowiper.wallet.util.GuiThreadExecutor;
+import com.gowiper.wallet.util.Qr;
+import com.gowiper.wallet.util.WalletUtils;
+import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction.Purpose;
@@ -116,7 +119,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
 
         this.direction = (Direction) getArguments().getSerializable(KEY_DIRECTION);
 
-        final boolean showBackupWarning = direction == null || direction == Direction.RECEIVED;
+        final boolean showBackupWarning = direction == null || direction == TransactionController.Direction.RECEIVED;
 
         adapter = new TransactionsListAdapter(activity, wallet, walletClient.maxConnectedPeers(), showBackupWarning);
         setListAdapter(adapter);
@@ -291,10 +294,10 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
             adapter.replace(result);
 
             final SpannableStringBuilder emptyText = new SpannableStringBuilder(
-                    getString(direction == Direction.SENT ? R.string.wallet_transactions_fragment_empty_text_sent
+                    getString(direction == TransactionController.Direction.SENT ? R.string.wallet_transactions_fragment_empty_text_sent
                             : R.string.wallet_transactions_fragment_empty_text_received));
             emptyText.setSpan(new StyleSpan(Typeface.BOLD), 0, emptyText.length(), SpannableStringBuilder.SPAN_POINT_MARK);
-            if (direction != Direction.SENT) {
+            if (direction != TransactionController.Direction.SENT) {
                 emptyText.append("\n\n").append(getString(R.string.wallet_transactions_fragment_empty_text_howto));
             }
 

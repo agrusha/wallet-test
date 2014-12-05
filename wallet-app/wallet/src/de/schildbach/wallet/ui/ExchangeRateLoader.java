@@ -21,8 +21,8 @@ import android.content.Context;
 import android.content.CursorLoader;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import de.schildbach.wallet.Configuration;
-import de.schildbach.wallet.ExchangeRatesProvider;
+import com.gowiper.wallet.Configuration;
+import com.gowiper.wallet.ExchangeRatesProvider;
 
 /**
  * @author Andreas Schildbach

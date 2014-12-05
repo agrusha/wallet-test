@@ -34,8 +34,8 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-import de.schildbach.wallet.util.GenericUtils;
-import de.schildbach.wallet.util.MonetarySpannable;
+import com.gowiper.wallet.util.GenericUtils;
+import com.gowiper.wallet.util.MonetarySpannable;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Monetary;
@@ -177,27 +177,32 @@ public final class CurrencyAmountView extends FrameLayout {
 
     @CheckForNull
     public Monetary getAmount() {
-        if (!isValidAmount(false))
+        if (!isValidAmount(false)) {
             return null;
+        }
 
         final String amountStr = textView.getText().toString().trim();
-        if (localCurrencyCode == null)
+        if (localCurrencyCode == null) {
             return inputFormat.parse(amountStr);
-        else
+        } else {
             return inputFormat.parseFiat(localCurrencyCode, amountStr);
+        }
     }
 
     public void setAmount(@Nullable final Monetary amount, final boolean fireListener) {
-        if (!fireListener)
+        if (!fireListener) {
             textViewListener.setFire(false);
+        }
 
-        if (amount != null)
+        if (amount != null) {
             textView.setText(new MonetarySpannable(inputFormat, amountSigned, amount));
-        else
+        } else {
             textView.setText(null);
+        }
 
-        if (!fireListener)
+        if (!fireListener) {
             textViewListener.setFire(true);
+        }
     }
 
     @Override
@@ -216,10 +221,11 @@ public final class CurrencyAmountView extends FrameLayout {
     }
 
     public void setStrikeThru(final boolean strikeThru) {
-        if (strikeThru)
+        if (strikeThru) {
             textView.setPaintFlags(textView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        else
+        } else {
             textView.setPaintFlags(textView.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
+        }
     }
 
     public TextView getTextView() {

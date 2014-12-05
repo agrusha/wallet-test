@@ -29,9 +29,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
-import de.schildbach.wallet.AddressBookProvider;
-import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.util.WalletUtils;
+import com.gowiper.wallet.util.AddressBookProvider;
+import com.gowiper.wallet.Constants;
+import com.gowiper.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
 
 import javax.annotation.Nonnull;
