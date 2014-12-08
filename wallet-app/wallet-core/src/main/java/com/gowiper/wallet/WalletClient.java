@@ -57,7 +57,7 @@ public class WalletClient {
         this.activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
         this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());
 
-        this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration);
+        this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration, blockchainServiceController);
         this.transactionController = new TransactionController(this);
         this.blockchainManager = new BlockchainManagerImpl(this);
 
@@ -94,7 +94,6 @@ public class WalletClient {
 
     public void replaceWallet(final Wallet newWallet) {
         walletController.replaceWallet(newWallet);
-        resetBlockchainService();
     }
 
     public void processDirectTransaction(@Nonnull final Transaction tx) throws VerificationException {

@@ -2,19 +2,25 @@ package com.gowiper.wallet.controllers;
 
 import android.content.Context;
 import android.text.format.DateUtils;
+import com.google.common.base.Joiner;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.util.Io;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.bitcoinj.core.Utils;
 import org.bitcoinj.core.Wallet;
+import org.bitcoinj.crypto.KeyCrypterException;
 import org.bitcoinj.store.UnreadableWalletException;
 import org.bitcoinj.store.WalletProtobufSerializer;
+import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.Protos;
 import org.bitcoinj.wallet.WalletFiles;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -22,13 +28,16 @@ import java.util.concurrent.TimeUnit;
 public class WalletControllerImpl implements WalletController {
     private final File walletFile;
     private final Configuration configuration;
+    private final BlockchainServiceController blockchainServiceController;
     private final Context context;
 
     @Getter private Wallet wallet;
 
-    public WalletControllerImpl(Context context, Configuration configuration) {
+    public WalletControllerImpl(Context context, Configuration configuration,
+                                BlockchainServiceController blockchainServiceController) {
         this.configuration = configuration;
         this.context = context;
+        this.blockchainServiceController = blockchainServiceController;
         this.walletFile = context.getFileStreamPath(Constants.Files.WALLET_FILENAME_PROTOBUF);
         loadWalletFromProtobuf();
         afterLoadWallet();
@@ -74,14 +83,46 @@ public class WalletControllerImpl implements WalletController {
                 throw new Error("bad wallet network parameters: " + wallet.getParams().getId());
             }
         } else {
-            wallet = new Wallet(Constants.NETWORK_PARAMETERS);
-
-            backupWallet();
-
-            configuration.armBackupReminder();
-
-            log.info("new wallet created");
+            createNewWallet();
         }
+    }
+
+    private Wallet createNewWallet() {
+        wallet = new Wallet(Constants.NETWORK_PARAMETERS);
+        backupWallet();
+        configuration.armBackupReminder();
+        log.info("new wallet created");
+
+        String passphrase = Joiner.on(' ').join(wallet.getKeyChainSeed().getMnemonicCode());
+        log.info("passphrase is {}", passphrase);
+
+        return wallet;
+    }
+
+    @Override
+    public Wallet importWallet(List<String> mnemonicCode) {
+        DeterministicSeed newSeed = new DeterministicSeed(mnemonicCode, null, null, Utils.currentTimeSeconds());
+        Wallet newWallet = Wallet.fromSeed(Constants.NETWORK_PARAMETERS, newSeed);
+        log.info("new wallet created by mnemonic words");
+        replaceWallet(newWallet);
+        return wallet;
+
+    }
+
+    @Override
+    public List<String> getMnemonicCode(String password) throws Throwable {
+        if(wallet.isEncrypted()) {
+            if (StringUtils.isNotBlank(password)) {
+                try {
+                    wallet.decrypt(password);
+                } catch (KeyCrypterException ex) {
+                    throw new Throwable(ex);
+                }
+            } else {
+                throw new Throwable("no password provided");
+            }
+        }
+        return wallet.getKeyChainSeed().getMnemonicCode();
     }
 
     private Wallet restoreWalletFromBackup() {
@@ -95,8 +136,6 @@ public class WalletControllerImpl implements WalletController {
             if (!wallet.isConsistent()) {
                 throw new Error("inconsistent backup");
             }
-
-//            application.resetBlockchain();
 
             log.info("wallet restored from backup: '" + Constants.Files.WALLET_KEY_BACKUP_PROTOBUF + "'");
 
@@ -177,13 +216,13 @@ public class WalletControllerImpl implements WalletController {
 
     }
 
-
     @Override
     public void replaceWallet(Wallet newWallet) {
         wallet.shutdownAutosaveAndWait();
 
         wallet = newWallet;
         configuration.maybeIncrementBestChainHeightEver(newWallet.getLastBlockSeenHeight());
+        blockchainServiceController.resetBlockchainService();
         afterLoadWallet();
     }
 
