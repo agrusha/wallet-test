@@ -17,26 +17,16 @@ public class BlockchainManagerImpl implements BlockchainManager{
             new ObservableDelegate<BlockchainManager, Object>(this);
 
     @Getter
-    private final BalanceController balanceController;
-    @Getter
     private final BlockchainStateController blockchainStateController;
     @Getter
     private final ExchangeRatesController exchangeRatesController;
 
     public BlockchainManagerImpl(WalletClient client) {
-        this.balanceController = new BalanceController(client);
         this.blockchainStateController = new BlockchainStateController(client);
         this.exchangeRatesController = new ExchangeRatesController(client);
 
-        balanceController.addObserver(observableDelegate);
         blockchainStateController.addObserver(observableDelegate);
         exchangeRatesController.addObserver(observableDelegate);
-    }
-
-
-    @Override
-    public ListenableFuture<Coin> loadBalance() {
-        return balanceController.loadBalance();
     }
 
     @Override

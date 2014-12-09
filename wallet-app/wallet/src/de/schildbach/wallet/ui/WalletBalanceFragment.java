@@ -33,6 +33,7 @@ import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
+import com.gowiper.wallet.controllers.BalanceWatcher;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.service.BlockchainState;
@@ -57,6 +58,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     private Configuration config;
 
     private BlockchainManager blockchainManager;
+    private BalanceWatcher balanceWatcher;
     private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
     private final BalanceUpdate balanceUpdate = new BalanceUpdate();
@@ -88,8 +90,10 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.blockchainManager = walletClient.getBlockchainManager();
+        this.balanceWatcher = walletClient.getBalanceWatcher();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
 
+        balance = balanceWatcher.getBalance();
         showLocalBalance = getResources().getBoolean(R.bool.show_local_balance);
     }
 
@@ -136,7 +140,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         super.onResume();
 
         blockchainManager.addObserver(this);
-
+        balanceWatcher.addObserver(balanceUpdate);
         updateData();
         updateView();
     }
@@ -144,13 +148,14 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     @Override
     public void onPause() {
         blockchainManager.removeObserver(this);
-
+        balanceWatcher.removeObserver(balanceUpdate);
         super.onPause();
     }
 
     private void updateView() {
-        if (!isAdded())
+        if (!isAdded()) {
             return;
+        }
 
         final boolean showProgress;
 
@@ -219,7 +224,6 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     }
 
     private void updateData() {
-        Futures.addCallback(blockchainManager.loadBalance(), balanceUpdate, guiThreadExecutor);
         Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
         Futures.addCallback(blockchainManager.loadExchangeRate(), exchangeRateUpdate, guiThreadExecutor);
     }
@@ -236,16 +240,11 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         }
     }
 
-    private class BalanceUpdate implements FutureCallback<Coin> {
+    private class BalanceUpdate implements Observer<BalanceWatcher> {
         @Override
-        public void onSuccess(Coin result) {
-            balance = result;
+        public void handleUpdate(BalanceWatcher updatedObject) {
+            balance = balanceWatcher.getBalance();
             guiThreadExecutor.execute(updateViewTask);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            log.error("Failed to get balance update ", t);
         }
     }
 

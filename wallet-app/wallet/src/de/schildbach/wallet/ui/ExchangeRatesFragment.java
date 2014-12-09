@@ -39,17 +39,17 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.*;
+import com.gowiper.wallet.controllers.BalanceWatcher;
+import com.gowiper.wallet.controllers.BlockchainManager;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.service.BlockchainState;
 import com.gowiper.wallet.util.GuiThreadExecutor;
 import com.gowiper.wallet.util.WholeStringBuilder;
-import com.gowiper.wallet.controllers.BlockchainManager;
 import de.schildbach.wallet.ui.util.WalletBalanceWidgetProvider;
 import de.schildbach.wallet_test.R;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Wallet;
-import org.bitcoinj.core.Wallet.BalanceType;
 
 import javax.annotation.CheckForNull;
 
@@ -68,9 +68,9 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     private LoaderManager loaderManager;
 
     private BlockchainManager blockchainManager;
+    private BalanceWatcher balanceWatcher;
     private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
-    private final BalanceUpdate balanceUpdate = new BalanceUpdate();
     private final BlockchainStateUpdate blockchainStateUpdate = new BlockchainStateUpdate();
 
     private ExchangeRatesAdapter adapter;
@@ -96,6 +96,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         this.loaderManager = getLoaderManager();
 
         this.blockchainManager = walletClient.getBlockchainManager();
+        this.balanceWatcher = walletClient.getBalanceWatcher();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
 
@@ -233,7 +234,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     }
 
     private void updateView() {
-        balance = walletClient.getWallet().getBalance(BalanceType.ESTIMATED);
+        balance = balanceWatcher.getBalance();
 
         if (adapter != null) {
             final int btcShift = config.getBtcShift();
@@ -245,7 +246,6 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     }
 
     private void updateData() {
-        Futures.addCallback(blockchainManager.loadBalance(), balanceUpdate, guiThreadExecutor);
         Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
     }
 
@@ -341,19 +341,6 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         @Override
         public void run() {
             updateView();
-        }
-    }
-
-    private class BalanceUpdate implements FutureCallback<Coin> {
-        @Override
-        public void onSuccess(Coin result) {
-            balance = result;
-            guiThreadExecutor.execute(updateViewTask);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            log.error("Failed to get balance update ", t);
         }
     }
 

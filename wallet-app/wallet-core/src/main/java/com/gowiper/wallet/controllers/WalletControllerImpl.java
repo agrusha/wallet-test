@@ -125,6 +125,25 @@ public class WalletControllerImpl implements WalletController {
         return wallet.getKeyChainSeed().getMnemonicCode();
     }
 
+    @Override
+    public void saveWallet() {
+        try {
+            protobufSerializeWallet(wallet);
+        } catch (final IOException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+    @Override
+    public void replaceWallet(Wallet newWallet) {
+        wallet.shutdownAutosaveAndWait();
+
+        wallet = newWallet;
+        configuration.maybeIncrementBestChainHeightEver(newWallet.getLastBlockSeenHeight());
+        blockchainServiceController.resetBlockchainService();
+        afterLoadWallet();
+    }
+
     private Wallet restoreWalletFromBackup() {
         InputStream inputStream = null;
 
@@ -190,15 +209,6 @@ public class WalletControllerImpl implements WalletController {
         }
     }
 
-    @Override
-    public void saveWallet() {
-        try {
-            protobufSerializeWallet(wallet);
-        } catch (final IOException x) {
-            throw new RuntimeException(x);
-        }
-    }
-
     private void protobufSerializeWallet(@Nonnull final Wallet wallet) throws IOException {
         final long start = System.currentTimeMillis();
 
@@ -216,22 +226,13 @@ public class WalletControllerImpl implements WalletController {
 
     }
 
-    @Override
-    public void replaceWallet(Wallet newWallet) {
-        wallet.shutdownAutosaveAndWait();
-
-        wallet = newWallet;
-        configuration.maybeIncrementBestChainHeightEver(newWallet.getLastBlockSeenHeight());
-        blockchainServiceController.resetBlockchainService();
-        afterLoadWallet();
-    }
-
     private void afterLoadWallet() {
         wallet.autosaveToFile(walletFile, 10, TimeUnit.SECONDS, new WalletAutosaveEventListener());
 
         // clean up spam
         wallet.cleanup();
     }
+
     private final class WalletAutosaveEventListener implements WalletFiles.Listener {
         @Override
         public void onBeforeAutoSave(final File file) {}
