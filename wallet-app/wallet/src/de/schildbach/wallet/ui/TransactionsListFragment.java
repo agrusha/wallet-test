@@ -31,25 +31,21 @@ import android.text.format.DateUtils;
 import android.text.style.StyleSpan;
 import android.view.*;
 import android.widget.ListView;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
-import com.gowiper.wallet.WalletApplication;
-import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.controllers.TransactionController;
-import com.gowiper.wallet.controllers.TransactionController.Direction;
-import de.schildbach.wallet.ui.util.BitmapFragment;
+import com.gowiper.wallet.WalletApplication;
+import com.gowiper.wallet.WalletClient;
+import com.gowiper.wallet.controllers.TransactionWatcher;
+import com.gowiper.wallet.controllers.TransactionWatcher.Direction;
+import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.util.GuiThreadExecutor;
 import com.gowiper.wallet.util.Qr;
 import com.gowiper.wallet.util.WalletUtils;
-import com.gowiper.wallet.WalletClient;
+import de.schildbach.wallet.ui.util.BitmapFragment;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction.Purpose;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -61,25 +57,22 @@ import java.util.List;
 /**
  * @author Andreas Schildbach
  */
-public class TransactionsListFragment extends FancyListFragment implements Observer<TransactionController> {
+public class TransactionsListFragment extends FancyListFragment implements Observer<TransactionWatcher> {
     private AbstractWalletActivity activity;
     private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
-    private TransactionController transactionController;
+    private TransactionWatcher transactionWatcher;
     private ContentResolver resolver;
     private TransactionsListAdapter adapter;
     private GuiThreadExecutor guiThreadExecutor;
     @CheckForNull
     private Direction direction;
-    private final LoadingCallBack loadingCallBack = new LoadingCallBack();
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
     private final Handler handler = new Handler();
 
     private static final String KEY_DIRECTION = "direction";
     private static final Uri KEY_ROTATION_URI = Uri.parse("http://bitcoin.org/en/alert/2013-08-11-android");
-
-    private static final Logger log = LoggerFactory.getLogger(TransactionsListFragment.class);
 
     public static TransactionsListFragment instance(@Nullable final Direction direction) {
         final TransactionsListFragment fragment = new TransactionsListFragment();
@@ -106,7 +99,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.wallet = walletClient.getWallet();
-        this.transactionController = walletClient.getTransactionController();
+        this.transactionWatcher = walletClient.getTransactionWatcher();
         this.resolver = activity.getContentResolver();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
@@ -119,7 +112,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
 
         this.direction = (Direction) getArguments().getSerializable(KEY_DIRECTION);
 
-        final boolean showBackupWarning = direction == null || direction == TransactionController.Direction.RECEIVED;
+        final boolean showBackupWarning = direction == null || direction == TransactionWatcher.Direction.RECEIVED;
 
         adapter = new TransactionsListAdapter(activity, wallet, walletClient.maxConnectedPeers(), showBackupWarning);
         setListAdapter(adapter);
@@ -131,7 +124,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
 
         resolver.registerContentObserver(AddressBookProvider.contentUri(activity.getPackageName()), true, addressBookObserver);
 
-        transactionController.addObserver(this);
+        transactionWatcher.addObserver(this);
         loadTransactions();
 
         updateView();
@@ -140,7 +133,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
     @Override
     public void onPause() {
 
-        transactionController.removeObserver(this);
+        transactionWatcher.removeObserver(this);
 
         resolver.unregisterContentObserver(addressBookObserver);
 
@@ -161,12 +154,12 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
     }
 
     @Override
-    public void handleUpdate(TransactionController updatedObject) {
+    public void handleUpdate(TransactionWatcher updatedObject) {
         guiThreadExecutor.execute(updateViewTask);
     }
 
     private void loadTransactions() {
-        Futures.addCallback(transactionController.loadTransactions(direction), loadingCallBack);
+        updateTransactions(transactionWatcher.getTransactions(direction));
     }
 
     private void handleTransactionClick(@Nonnull final Transaction tx) {
@@ -280,34 +273,25 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
         adapter.clearLabelCache();
     }
 
+    private void updateTransactions(List<Transaction> newTransactionsList) {
+        adapter.replace(newTransactionsList);
+
+        final SpannableStringBuilder emptyText = new SpannableStringBuilder(
+                getString(direction == TransactionWatcher.Direction.SENT ? R.string.wallet_transactions_fragment_empty_text_sent
+                        : R.string.wallet_transactions_fragment_empty_text_received));
+        emptyText.setSpan(new StyleSpan(Typeface.BOLD), 0, emptyText.length(), SpannableStringBuilder.SPAN_POINT_MARK);
+        if (direction != TransactionWatcher.Direction.SENT) {
+            emptyText.append("\n\n").append(getString(R.string.wallet_transactions_fragment_empty_text_howto));
+        }
+
+        setEmptyText(emptyText);
+    }
+
     private class UpdateViewTask implements Runnable{
         @Override
         public void run() {
             updateView();
             loadTransactions();
-        }
-    }
-
-    private class LoadingCallBack implements FutureCallback<List<Transaction>>{
-        @Override
-        public void onSuccess(List<Transaction> result) {
-            adapter.replace(result);
-
-            final SpannableStringBuilder emptyText = new SpannableStringBuilder(
-                    getString(direction == TransactionController.Direction.SENT ? R.string.wallet_transactions_fragment_empty_text_sent
-                            : R.string.wallet_transactions_fragment_empty_text_received));
-            emptyText.setSpan(new StyleSpan(Typeface.BOLD), 0, emptyText.length(), SpannableStringBuilder.SPAN_POINT_MARK);
-            if (direction != TransactionController.Direction.SENT) {
-                emptyText.append("\n\n").append(getString(R.string.wallet_transactions_fragment_empty_text_howto));
-            }
-
-            setEmptyText(emptyText);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            log.error("Failed to get transactions list for {} transactions view", direction == null ? "all" : direction.toString());
-            log.error("got an error ", t);
         }
     }
 }

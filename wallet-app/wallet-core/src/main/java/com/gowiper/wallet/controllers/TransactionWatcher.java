@@ -2,47 +2,37 @@ package com.gowiper.wallet.controllers;
 
 import android.content.SharedPreferences;
 import android.text.format.DateUtils;
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.utils.observers.Observable;
-import com.gowiper.utils.observers.ObservableDelegate;
+import com.gowiper.utils.observers.ObservableSupport;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.WalletClient;
-import com.gowiper.wallet.loaders.TransactionLoader;
 import com.gowiper.wallet.util.ThrottlingWalletChangeListener;
 import lombok.Delegate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionConfidence;
 import org.bitcoinj.core.Wallet;
 
-import java.util.List;
+import java.util.*;
 
 @Slf4j
-public class TransactionController implements Observable<TransactionController> {
+public class TransactionWatcher implements Observable<TransactionWatcher> {
     public static enum Direction {
         RECEIVED, SENT
     }
-
     public static final long THROTTLE_MS = DateUtils.SECOND_IN_MILLIS;
 
     @Delegate
-    ObservableDelegate<TransactionController, LoadingController<TransactionLoader, List<Transaction>>> observableDelegate = new ObservableDelegate<TransactionController, LoadingController<TransactionLoader, List<Transaction>>>(this);
-
-    private final LoadingController<TransactionLoader, List<Transaction>> loadingController;
-
+    ObservableSupport<TransactionWatcher> observableSupport = new ObservableSupport<TransactionWatcher>(this);
     private final Wallet wallet;
+    private final TransactionComparator transactionComparator = new TransactionComparator();
 
-    public TransactionController(WalletClient client) {
+    public TransactionWatcher(WalletClient client) {
         this.wallet = client.getWallet();
-        this.loadingController = new LoadingController<TransactionLoader, List<Transaction>>(client.getApplicationContext(),
-                new TransactionLoader(wallet, client.getBackgroundExecutor()),
-                BlockchainServiceController.ACTION_WALLET_CHANGED);
-        this.loadingController.addObserver(observableDelegate);
         Configuration config = client.getConfiguration();
         config.registerOnSharedPreferenceChangeListener(new PreferencesListener());
 
@@ -51,24 +41,21 @@ public class TransactionController implements Observable<TransactionController> 
         transactionChangeListener.onReorganize(null);
     }
 
-    public ListenableFuture<List<Transaction>> loadTransactions(final Direction direction) {
-        return getFilteredTransactions(loadingController.loadData(), direction);
-    }
-
-    private ListenableFuture<List<Transaction>> getFilteredTransactions(
-            ListenableFuture<List<Transaction>> futureTransactions,
-            final Direction direction) {
-        return Futures.transform(futureTransactions, new Function<List<Transaction>, List<Transaction>>() {
-            @Override
-            public List<Transaction> apply(List<Transaction> input) {
-                return applyTransactionsFilter(input, direction);
-            }
-        });
+    public List<Transaction> getTransactions(final Direction direction) {
+        return applyTransactionsFilter(getTransactionsList(), direction);
     }
 
     private List<Transaction> applyTransactionsFilter(List<Transaction> origin, Direction direction) {
         Iterable<Transaction> filteredTransactions = Iterables.filter(origin, new TransactionsFilter(direction));
         return Lists.newArrayList(filteredTransactions);
+    }
+
+    private List<Transaction> getTransactionsList() {
+        final Set<Transaction> transactions = wallet.getTransactions(true);
+        final List<Transaction> transactionsList = new ArrayList<Transaction>(transactions);
+        Collections.sort(transactionsList, transactionComparator);
+
+        return transactionsList;
     }
 
     @RequiredArgsConstructor(suppressConstructorProperties = true)
@@ -90,7 +77,7 @@ public class TransactionController implements Observable<TransactionController> 
 
         @Override
         public void onThrottledWalletChanged() {
-            loadingController.load();
+            notifyObservers();
         }
     }
 
@@ -100,6 +87,29 @@ public class TransactionController implements Observable<TransactionController> 
             if(Configuration.PREFS_KEY_BTC_PRECISION.equals(key)) {
                 notifyObservers();
             }
+        }
+    }
+
+    private static class TransactionComparator implements Comparator<Transaction> {
+        @Override
+        public int compare(final Transaction tx1, final Transaction tx2) {
+            final boolean pending1 = tx1.getConfidence().getConfidenceType() == TransactionConfidence.ConfidenceType.PENDING;
+            final boolean pending2 = tx2.getConfidence().getConfidenceType() == TransactionConfidence.ConfidenceType.PENDING;
+
+            if (pending1 != pending2) {
+                return pending1 ? -1 : 1;
+            }
+
+            final Date updateTime1 = tx1.getUpdateTime();
+            final long time1 = updateTime1 == null ? 0 : updateTime1.getTime();
+            final Date updateTime2 = tx2.getUpdateTime();
+            final long time2 = updateTime2 == null ? 0 : updateTime2.getTime();
+
+            if (time1 != time2) {
+                return time1 > time2 ? -1 : 1;
+            }
+
+            return tx1.getHash().compareTo(tx2.getHash());
         }
     }
 }

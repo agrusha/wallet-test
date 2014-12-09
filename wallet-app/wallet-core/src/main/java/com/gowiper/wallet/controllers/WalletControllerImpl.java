@@ -232,7 +232,6 @@ public class WalletControllerImpl implements WalletController {
         // clean up spam
         wallet.cleanup();
     }
-
     private final class WalletAutosaveEventListener implements WalletFiles.Listener {
         @Override
         public void onBeforeAutoSave(final File file) {}
