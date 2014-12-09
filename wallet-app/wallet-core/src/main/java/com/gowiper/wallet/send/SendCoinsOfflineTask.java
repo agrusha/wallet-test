@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.schildbach.wallet.ui.send;
+package com.gowiper.wallet.send;
 
 import android.os.Handler;
 import android.os.Looper;

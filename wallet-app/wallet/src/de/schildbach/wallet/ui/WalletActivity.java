@@ -51,9 +51,9 @@ import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.CrashReporter;
 import com.gowiper.wallet.WalletClient;
-import com.gowiper.wallet.data.PaymentIntent;
-import de.schildbach.wallet.ui.InputParser.BinaryInputParser;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import com.gowiper.wallet.data.BitcoinPayment;
+import com.gowiper.wallet.parser.BinaryInputParser;
+import com.gowiper.wallet.parser.StringInputParser;
 import de.schildbach.wallet.ui.preference.PreferenceActivity;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.ui.send.SweepWalletActivity;
@@ -147,7 +147,7 @@ public final class WalletActivity extends AbstractWalletActivity {
 
             new BinaryInputParser(inputType, input) {
                 @Override
-                protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
+                protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
                     cannotClassify(inputType);
                 }
 
@@ -166,8 +166,8 @@ public final class WalletActivity extends AbstractWalletActivity {
 
             new StringInputParser(input) {
                 @Override
-                protected void handlePaymentIntent(@Nonnull final PaymentIntent paymentIntent) {
-                    SendCoinsActivity.start(WalletActivity.this, paymentIntent);
+                protected void handleBitcoinPayment(@Nonnull final BitcoinPayment bitcoinPayment) {
+                    SendCoinsActivity.start(WalletActivity.this, bitcoinPayment);
                 }
 
                 @Override
@@ -300,7 +300,7 @@ public final class WalletActivity extends AbstractWalletActivity {
 
     private void handleDonate() {
         try {
-            SendCoinsActivity.start(this, PaymentIntent.fromAddress(Constants.DONATION_ADDRESS, getString(R.string.wallet_donate_address_label)));
+            SendCoinsActivity.start(this, BitcoinPayment.fromAddress(Constants.DONATION_ADDRESS, getString(R.string.wallet_donate_address_label)));
         } catch (final AddressFormatException x) {
             // cannot happen, address is hardcoded
             throw new RuntimeException(x);

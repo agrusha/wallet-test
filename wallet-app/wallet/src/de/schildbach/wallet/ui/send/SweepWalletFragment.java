@@ -22,9 +22,10 @@ import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
-import com.gowiper.wallet.data.PaymentIntent;
+import com.gowiper.wallet.data.BitcoinPayment;
+import com.gowiper.wallet.send.SendCoinsOfflineTask;
 import de.schildbach.wallet.ui.*;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import com.gowiper.wallet.parser.StringInputParser;
 import com.gowiper.wallet.util.MonetarySpannable;
 import com.gowiper.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
@@ -202,7 +203,7 @@ public class SweepWalletFragment extends Fragment {
                     }
 
                     @Override
-                    protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
+                    protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
                         cannotClassify(input);
                     }
 

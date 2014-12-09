@@ -25,8 +25,9 @@ import android.os.Looper;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.data.PaymentIntent;
-import de.schildbach.wallet.ui.InputParser;
+import com.gowiper.wallet.data.BitcoinPayment;
+import com.gowiper.wallet.parser.BinaryInputParser;
+import com.gowiper.wallet.parser.StreamInputParser;
 import com.gowiper.wallet.util.Bluetooth;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.protocols.payments.PaymentProtocol;
@@ -53,7 +54,7 @@ public abstract class RequestPaymentRequestTask {
     private static final Logger log = LoggerFactory.getLogger(RequestPaymentRequestTask.class);
 
     public interface ResultCallback {
-        void onPaymentIntent(PaymentIntent paymentIntent);
+        void onPaymentIntent(BitcoinPayment bitcoinPayment);
 
         void onFail(int messageResId, Object... messageArgs);
     }
@@ -105,12 +106,12 @@ public abstract class RequestPaymentRequestTask {
                         if (responseCode == HttpURLConnection.HTTP_OK) {
                             is = connection.getInputStream();
 
-                            new InputParser.StreamInputParser(connection.getContentType(), is) {
+                            new StreamInputParser(connection.getContentType(), is) {
                                 @Override
-                                protected void handlePaymentIntent(@Nonnull final PaymentIntent paymentIntent) {
-                                    log.info("received {} via http", paymentIntent);
+                                protected void handleBitcoinPayment(@Nonnull final BitcoinPayment bitcoinPayment) {
+                                    log.info("received {} via http", bitcoinPayment);
 
-                                    onPaymentIntent(paymentIntent);
+                                    onPaymentIntent(bitcoinPayment);
                                 }
 
                                 @Override
@@ -188,12 +189,12 @@ public abstract class RequestPaymentRequestTask {
                         final int responseCode = cis.readInt32();
 
                         if (responseCode == 200) {
-                            new InputParser.BinaryInputParser(PaymentProtocol.MIMETYPE_PAYMENTREQUEST, cis.readBytes().toByteArray()) {
+                            new BinaryInputParser(PaymentProtocol.MIMETYPE_PAYMENTREQUEST, cis.readBytes().toByteArray()) {
                                 @Override
-                                protected void handlePaymentIntent(@Nonnull final PaymentIntent paymentIntent) {
-                                    log.info("received {} via bluetooth", paymentIntent);
+                                protected void handleBitcoinPayment(@Nonnull final BitcoinPayment bitcoinPayment) {
+                                    log.info("received {} via bluetooth", bitcoinPayment);
 
-                                    onPaymentIntent(paymentIntent);
+                                    onPaymentIntent(bitcoinPayment);
                                 }
 
                                 @Override
@@ -242,11 +243,11 @@ public abstract class RequestPaymentRequestTask {
 
     public abstract void requestPaymentRequest(@Nonnull String url);
 
-    protected void onPaymentIntent(final PaymentIntent paymentIntent) {
+    protected void onPaymentIntent(final BitcoinPayment bitcoinPayment) {
         callbackHandler.post(new Runnable() {
             @Override
             public void run() {
-                resultCallback.onPaymentIntent(paymentIntent);
+                resultCallback.onPaymentIntent(bitcoinPayment);
             }
         });
     }

@@ -44,19 +44,19 @@ import android.widget.*;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import com.gowiper.wallet.*;
 import com.gowiper.wallet.data.AddressAndLabel;
+import com.gowiper.wallet.data.BitcoinPayment;
 import com.gowiper.wallet.data.ExchangeRate;
-import com.gowiper.wallet.data.PaymentIntent;
-import com.gowiper.wallet.data.PaymentIntent.Standard;
 import com.gowiper.wallet.offline.DirectPaymentTask;
+import com.gowiper.wallet.parser.BinaryInputParser;
+import com.gowiper.wallet.parser.StreamInputParser;
+import com.gowiper.wallet.parser.StringInputParser;
+import com.gowiper.wallet.send.SendCoinsOfflineTask;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.util.Bluetooth;
 import com.gowiper.wallet.util.Nfc;
 import com.gowiper.wallet.util.WalletUtils;
 import de.schildbach.wallet.integration.android.BitcoinIntegration;
 import de.schildbach.wallet.ui.*;
-import de.schildbach.wallet.ui.InputParser.BinaryInputParser;
-import de.schildbach.wallet.ui.InputParser.StreamInputParser;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
 import de.schildbach.wallet.ui.util.CurrencyCalculatorLink;
 import de.schildbach.wallet_test.R;
 import org.bitcoin.protocols.payments.Protos.Payment;
@@ -119,7 +119,7 @@ public final class SendCoinsFragment extends Fragment {
 
     private State state = State.INPUT;
 
-    private PaymentIntent paymentIntent = null;
+    private BitcoinPayment bitcoinPayment = null;
     private boolean priority = false;
     private AddressAndLabel validatedAddress = null;
 
@@ -187,7 +187,7 @@ public final class SendCoinsFragment extends Fragment {
 
         @Override
         public boolean onPrepareActionMode(final ActionMode mode, final Menu menu) {
-            menu.findItem(R.id.send_coins_address_context_clear).setVisible(paymentIntent.mayEditAddress());
+            menu.findItem(R.id.send_coins_address_context_clear).setVisible(bitcoinPayment.mayEditAddress());
 
             return true;
         }
@@ -445,7 +445,7 @@ public final class SendCoinsFragment extends Fragment {
             } else if (intent.hasExtra(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT)) {
                 initStateFromIntentExtras(intent.getExtras());
             } else {
-                updateStateFrom(PaymentIntent.blank());
+                updateStateFrom(BitcoinPayment.blank());
             }
         }
     }
@@ -473,7 +473,7 @@ public final class SendCoinsFragment extends Fragment {
             @Override
             public void onFocusChange(final View v, final boolean hasFocus) {
                 if (hasFocus) {
-                    final Address address = paymentIntent.hasAddress() ? paymentIntent.getAddress()
+                    final Address address = bitcoinPayment.hasAddress() ? bitcoinPayment.getAddress()
                             : (validatedAddress != null ? validatedAddress.address : null);
                     if (address != null)
                         actionMode = activity.startActionMode(new ReceivingAddressActionMode(address));
@@ -498,7 +498,7 @@ public final class SendCoinsFragment extends Fragment {
         directPaymentEnableView.setOnCheckedChangeListener(new OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(final CompoundButton buttonView, final boolean isChecked) {
-                if (paymentIntent.isBluetoothPaymentUrl() && isChecked && !bluetoothAdapter.isEnabled()) {
+                if (bitcoinPayment.isBluetoothPaymentUrl() && isChecked && !bluetoothAdapter.isEnabled()) {
                     // ask for permission to enable bluetooth
                     startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQUEST_CODE_ENABLE_BLUETOOTH_FOR_DIRECT_PAYMENT);
                 }
@@ -606,7 +606,7 @@ public final class SendCoinsFragment extends Fragment {
     private void saveInstanceState(final Bundle outState) {
         outState.putSerializable("state", state);
 
-        outState.putParcelable("payment_intent", paymentIntent);
+        outState.putParcelable("payment_intent", bitcoinPayment);
         outState.putBoolean("priority", priority);
         if (validatedAddress != null)
             outState.putParcelable("validated_address", validatedAddress);
@@ -620,7 +620,7 @@ public final class SendCoinsFragment extends Fragment {
     private void restoreInstanceState(final Bundle savedInstanceState) {
         state = (State) savedInstanceState.getSerializable("state");
 
-        paymentIntent = (PaymentIntent) savedInstanceState.getParcelable("payment_intent");
+        bitcoinPayment = (BitcoinPayment) savedInstanceState.getParcelable("payment_intent");
         priority = savedInstanceState.getBoolean("priority");
         validatedAddress = savedInstanceState.getParcelable("validated_address");
 
@@ -649,7 +649,7 @@ public final class SendCoinsFragment extends Fragment {
 
                 new StringInputParser(input) {
                     @Override
-                    protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
+                    protected void handleBitcoinPayment (final BitcoinPayment paymentIntent) {
                         updateStateFrom(paymentIntent);
                     }
 
@@ -665,10 +665,10 @@ public final class SendCoinsFragment extends Fragment {
                 }.parse();
             }
         } else if (requestCode == REQUEST_CODE_ENABLE_BLUETOOTH_FOR_PAYMENT_REQUEST) {
-            if (paymentIntent.isBluetoothPaymentRequestUrl())
+            if (bitcoinPayment.isBluetoothPaymentRequestUrl())
                 requestPaymentRequest();
         } else if (requestCode == REQUEST_CODE_ENABLE_BLUETOOTH_FOR_DIRECT_PAYMENT) {
-            if (paymentIntent.isBluetoothPaymentUrl())
+            if (bitcoinPayment.isBluetoothPaymentUrl())
                 directPaymentEnableView.setChecked(resultCode == Activity.RESULT_OK);
         }
     }
@@ -737,7 +737,7 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private boolean isOutputsValid() {
-        if (paymentIntent.hasOutputs())
+        if (bitcoinPayment.hasOutputs())
             return true;
 
         if (validatedAddress != null)
@@ -793,15 +793,15 @@ public final class SendCoinsFragment extends Fragment {
         setState(State.SIGNING);
 
         // final payment intent
-        final PaymentIntent finalPaymentIntent = paymentIntent.mergeWithEditedValues(amountCalculatorLink.getAmount(),
+        final BitcoinPayment finalBitcoinPayment = bitcoinPayment.mergeWithEditedValues(amountCalculatorLink.getAmount(),
                 validatedAddress != null ? validatedAddress.address : null);
-        final Coin finalAmount = finalPaymentIntent.getAmount();
+        final Coin finalAmount = finalBitcoinPayment.getAmount();
 
         // prepare send request
-        final SendRequest sendRequest = finalPaymentIntent.toSendRequest();
-        sendRequest.emptyWallet = paymentIntent.mayEditAmount() && finalAmount.equals(wallet.getBalance(BalanceType.AVAILABLE));
+        final SendRequest sendRequest = finalBitcoinPayment.toSendRequest();
+        sendRequest.emptyWallet = bitcoinPayment.mayEditAmount() && finalAmount.equals(wallet.getBalance(BalanceType.AVAILABLE));
         sendRequest.feePerKb = priority ? SendRequest.DEFAULT_FEE_PER_KB.multiply(10) : SendRequest.DEFAULT_FEE_PER_KB;
-        sendRequest.memo = paymentIntent.memo;
+        sendRequest.memo = bitcoinPayment.memo;
         sendRequest.aesKey = encryptionKey;
 
         new SendCoinsOfflineTask(wallet, backgroundHandler) {
@@ -813,9 +813,9 @@ public final class SendCoinsFragment extends Fragment {
 
                 sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
 
-                final Address refundAddress = paymentIntent.standard == Standard.BIP70 ? wallet.freshAddress(KeyPurpose.REFUND) : null;
+                final Address refundAddress = bitcoinPayment.standard == BitcoinPayment.Standard.BIP70 ? wallet.freshAddress(KeyPurpose.REFUND) : null;
                 final Payment payment = PaymentProtocol.createPaymentMessage(Arrays.asList(new Transaction[]{sentTransaction}), finalAmount,
-                        refundAddress, null, paymentIntent.payeeData);
+                        refundAddress, null, bitcoinPayment.payeeData);
 
                 if (directPaymentEnableView.isChecked())
                     directPay(payment);
@@ -828,7 +828,7 @@ public final class SendCoinsFragment extends Fragment {
 
                     final Intent result = new Intent();
                     BitcoinIntegration.transactionHashToResult(result, sentTransaction.getHashAsString());
-                    if (paymentIntent.standard == Standard.BIP70)
+                    if (bitcoinPayment.standard == BitcoinPayment.Standard.BIP70)
                         BitcoinIntegration.paymentToResult(result, payment.toByteArray());
                     activity.setResult(Activity.RESULT_OK, result);
                 }
@@ -849,7 +849,7 @@ public final class SendCoinsFragment extends Fragment {
                     @Override
                     public void onFail(final Object... messageArgs) {
                         final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_direct_payment_failed_title);
-                        dialog.setMessage(paymentIntent.paymentUrl + "\n" + getString(R.string.error_http, messageArgs) + "\n\n"
+                        dialog.setMessage(bitcoinPayment.paymentUrl + "\n" + getString(R.string.error_http, messageArgs) + "\n\n"
                                 + getString(R.string.send_coins_fragment_direct_payment_failed_msg));
                         dialog.setPositiveButton(R.string.button_retry, new DialogInterface.OnClickListener() {
                             @Override
@@ -862,12 +862,12 @@ public final class SendCoinsFragment extends Fragment {
                     }
                 };
 
-                if (paymentIntent.isHttpPaymentUrl()) {
-                    new DirectPaymentTask.HttpPaymentTask(backgroundHandler, callback, paymentIntent.paymentUrl, walletClient.httpUserAgent())
+                if (bitcoinPayment.isHttpPaymentUrl()) {
+                    new DirectPaymentTask.HttpPaymentTask(backgroundHandler, callback, bitcoinPayment.paymentUrl, walletClient.httpUserAgent())
                             .send(payment);
-                } else if (paymentIntent.isBluetoothPaymentUrl() && bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+                } else if (bitcoinPayment.isBluetoothPaymentUrl() && bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
                     new DirectPaymentTask.BluetoothPaymentTask(backgroundHandler, callback, bluetoothAdapter,
-                            Bluetooth.getBluetoothMac(paymentIntent.paymentUrl)).send(payment);
+                            Bluetooth.getBluetoothMac(bitcoinPayment.paymentUrl)).send(payment);
                 }
             }
 
@@ -965,9 +965,9 @@ public final class SendCoinsFragment extends Fragment {
             if (amount != null) {
                 try {
                     final Address dummy = wallet.currentReceiveAddress(); // won't be used, tx is never committed
-                    final SendRequest sendRequest = paymentIntent.mergeWithEditedValues(amount, dummy).toSendRequest();
+                    final SendRequest sendRequest = bitcoinPayment.mergeWithEditedValues(amount, dummy).toSendRequest();
                     sendRequest.signInputs = false;
-                    sendRequest.emptyWallet = paymentIntent.mayEditAmount() && amount.equals(wallet.getBalance(BalanceType.AVAILABLE));
+                    sendRequest.emptyWallet = bitcoinPayment.mayEditAmount() && amount.equals(wallet.getBalance(BalanceType.AVAILABLE));
                     sendRequest.feePerKb = priority ? SendRequest.DEFAULT_FEE_PER_KB.multiply(10) : SendRequest.DEFAULT_FEE_PER_KB;
                     wallet.completeTx(sendRequest);
                     dryrunTransaction = sendRequest.tx;
@@ -986,17 +986,17 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private void updateView() {
-        if (paymentIntent != null) {
+        if (bitcoinPayment != null) {
             final MonetaryFormat btcFormat = config.getFormat();
 
             getView().setVisibility(View.VISIBLE);
 
-            if (paymentIntent.hasPayee()) {
+            if (bitcoinPayment.hasPayee()) {
                 payeeNameView.setVisibility(View.VISIBLE);
-                payeeNameView.setText(paymentIntent.payeeName);
+                payeeNameView.setText(bitcoinPayment.payeeName);
 
                 payeeVerifiedByView.setVisibility(View.VISIBLE);
-                final String verifiedBy = paymentIntent.payeeVerifiedBy != null ? paymentIntent.payeeVerifiedBy
+                final String verifiedBy = bitcoinPayment.payeeVerifiedBy != null ? bitcoinPayment.payeeVerifiedBy
                         : getString(R.string.send_coins_fragment_payee_verified_by_unknown);
                 payeeVerifiedByView.setText(Constants.CHAR_CHECKMARK
                         + String.format(getString(R.string.send_coins_fragment_payee_verified_by), verifiedBy));
@@ -1005,14 +1005,14 @@ public final class SendCoinsFragment extends Fragment {
                 payeeVerifiedByView.setVisibility(View.GONE);
             }
 
-            if (paymentIntent.hasOutputs()) {
+            if (bitcoinPayment.hasOutputs()) {
                 receivingAddressView.setVisibility(View.GONE);
                 receivingStaticView.setVisibility(View.VISIBLE);
 
-                receivingStaticLabelView.setText(paymentIntent.memo);
+                receivingStaticLabelView.setText(bitcoinPayment.memo);
 
-                if (paymentIntent.hasAddress())
-                    receivingStaticAddressView.setText(WalletUtils.formatAddress(paymentIntent.getAddress(), Constants.ADDRESS_FORMAT_GROUP_SIZE,
+                if (bitcoinPayment.hasAddress())
+                    receivingStaticAddressView.setText(WalletUtils.formatAddress(bitcoinPayment.getAddress(), Constants.ADDRESS_FORMAT_GROUP_SIZE,
                             Constants.ADDRESS_FORMAT_LINE_SIZE));
                 else
                     receivingStaticAddressView.setText(R.string.send_coins_fragment_receiving_address_complex);
@@ -1043,11 +1043,11 @@ public final class SendCoinsFragment extends Fragment {
 
             receivingStaticView.setEnabled(state == State.INPUT);
 
-            amountCalculatorLink.setEnabled(state == State.INPUT && paymentIntent.mayEditAmount());
+            amountCalculatorLink.setEnabled(state == State.INPUT && bitcoinPayment.mayEditAmount());
 
             final boolean directPaymentVisible;
-            if (paymentIntent.hasPaymentUrl()) {
-                if (paymentIntent.isBluetoothPaymentUrl())
+            if (bitcoinPayment.hasPaymentUrl()) {
+                if (bitcoinPayment.isBluetoothPaymentUrl())
                     directPaymentVisible = bluetoothAdapter != null;
                 else
                     directPaymentVisible = !Constants.BUG_OPENSSL_HEARTBLEED;
@@ -1059,7 +1059,7 @@ public final class SendCoinsFragment extends Fragment {
 
             hintView.setVisibility(View.GONE);
             if (state == State.INPUT) {
-                if (paymentIntent.mayEditAddress() && validatedAddress == null && !receivingAddressView.getText().toString().trim().isEmpty()) {
+                if (bitcoinPayment.mayEditAddress() && validatedAddress == null && !receivingAddressView.getText().toString().trim().isEmpty()) {
                     hintView.setTextColor(getResources().getColor(R.color.fg_error));
                     hintView.setVisibility(View.VISIBLE);
                     hintView.setText(R.string.send_coins_fragment_receiving_address_error);
@@ -1144,9 +1144,9 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private void initStateFromIntentExtras(@Nonnull final Bundle extras) {
-        final PaymentIntent paymentIntent = extras.getParcelable(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT);
+        final BitcoinPayment bitcoinPayment = extras.getParcelable(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT);
 
-        updateStateFrom(paymentIntent);
+        updateStateFrom(bitcoinPayment);
     }
 
     private void initStateFromBitcoinUri(@Nonnull final Uri bitcoinUri) {
@@ -1154,8 +1154,8 @@ public final class SendCoinsFragment extends Fragment {
 
         new StringInputParser(input) {
             @Override
-            protected void handlePaymentIntent(@Nonnull final PaymentIntent paymentIntent) {
-                updateStateFrom(paymentIntent);
+            protected void handleBitcoinPayment (@Nonnull final BitcoinPayment bitcoinPayment) {
+                updateStateFrom(bitcoinPayment);
             }
 
             @Override
@@ -1178,8 +1178,8 @@ public final class SendCoinsFragment extends Fragment {
     private void initStateFromPaymentRequest(@Nonnull final String mimeType, @Nonnull final byte[] input) {
         new BinaryInputParser(mimeType, input) {
             @Override
-            protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
-                updateStateFrom(paymentIntent);
+            protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
+                updateStateFrom(bitcoinPayment);
             }
 
             @Override
@@ -1195,8 +1195,8 @@ public final class SendCoinsFragment extends Fragment {
 
             new StreamInputParser(mimeType, is) {
                 @Override
-                protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
-                    updateStateFrom(paymentIntent);
+                protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
+                    updateStateFrom(bitcoinPayment);
                 }
 
                 @Override
@@ -1209,10 +1209,10 @@ public final class SendCoinsFragment extends Fragment {
         }
     }
 
-    private void updateStateFrom(final @Nonnull PaymentIntent paymentIntent) {
-        log.info("got {}", paymentIntent);
+    private void updateStateFrom(final @Nonnull BitcoinPayment bitcoinPayment) {
+        log.info("got {}", bitcoinPayment);
 
-        this.paymentIntent = paymentIntent;
+        this.bitcoinPayment = bitcoinPayment;
 
         validatedAddress = null;
         directPaymentAck = null;
@@ -1223,11 +1223,11 @@ public final class SendCoinsFragment extends Fragment {
             public void run() {
                 if (state == State.INPUT) {
                     receivingAddressView.setText(null);
-                    amountCalculatorLink.setBtcAmount(paymentIntent.getAmount());
+                    amountCalculatorLink.setBtcAmount(bitcoinPayment.getAmount());
 
-                    if (paymentIntent.isBluetoothPaymentUrl())
+                    if (bitcoinPayment.isBluetoothPaymentUrl())
                         directPaymentEnableView.setChecked(bluetoothAdapter != null && bluetoothAdapter.isEnabled());
-                    else if (paymentIntent.isHttpPaymentUrl())
+                    else if (bitcoinPayment.isHttpPaymentUrl())
                         directPaymentEnableView.setChecked(!Constants.BUG_OPENSSL_HEARTBLEED);
 
                     requestFocusFirst();
@@ -1235,15 +1235,15 @@ public final class SendCoinsFragment extends Fragment {
                     handler.post(dryrunRunnable);
                 }
 
-                if (paymentIntent.hasPaymentRequestUrl()) {
-                    if (paymentIntent.isBluetoothPaymentRequestUrl() && !Constants.BUG_OPENSSL_HEARTBLEED) {
+                if (bitcoinPayment.hasPaymentRequestUrl()) {
+                    if (bitcoinPayment.isBluetoothPaymentRequestUrl() && !Constants.BUG_OPENSSL_HEARTBLEED) {
                         if (bluetoothAdapter.isEnabled())
                             requestPaymentRequest();
                         else
                             // ask for permission to enable bluetooth
                             startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
                                     REQUEST_CODE_ENABLE_BLUETOOTH_FOR_PAYMENT_REQUEST);
-                    } else if (paymentIntent.isHttpPaymentRequestUrl()) {
+                    } else if (bitcoinPayment.isHttpPaymentRequestUrl()) {
                         requestPaymentRequest();
                     }
                 }
@@ -1253,28 +1253,28 @@ public final class SendCoinsFragment extends Fragment {
 
     private void requestPaymentRequest() {
         final String host;
-        if (!Bluetooth.isBluetoothUrl(paymentIntent.paymentRequestUrl))
-            host = Uri.parse(paymentIntent.paymentRequestUrl).getHost();
+        if (!Bluetooth.isBluetoothUrl(bitcoinPayment.paymentRequestUrl))
+            host = Uri.parse(bitcoinPayment.paymentRequestUrl).getHost();
         else
-            host = Bluetooth.decompressMac(Bluetooth.getBluetoothMac(paymentIntent.paymentRequestUrl));
+            host = Bluetooth.decompressMac(Bluetooth.getBluetoothMac(bitcoinPayment.paymentRequestUrl));
 
         ProgressDialogFragment.showProgress(fragmentManager, getString(R.string.send_coins_fragment_request_payment_request_progress, host));
 
         final RequestPaymentRequestTask.ResultCallback callback = new RequestPaymentRequestTask.ResultCallback() {
             @Override
-            public void onPaymentIntent(final PaymentIntent paymentIntent) {
+            public void onPaymentIntent(final BitcoinPayment bitcoinPayment) {
                 ProgressDialogFragment.dismissProgress(fragmentManager);
 
-                if (SendCoinsFragment.this.paymentIntent.isExtendedBy(paymentIntent)) {
+                if (SendCoinsFragment.this.bitcoinPayment.isExtendedBy(bitcoinPayment)) {
                     // success
-                    updateStateFrom(paymentIntent);
+                    updateStateFrom(bitcoinPayment);
                     updateView();
                     handler.post(dryrunRunnable);
                 } else {
                     final StringBuilder reasons = new StringBuilder();
-                    if (!SendCoinsFragment.this.paymentIntent.equalsAddress(paymentIntent))
+                    if (!SendCoinsFragment.this.bitcoinPayment.equalsAddress(bitcoinPayment))
                         reasons.append("address");
-                    if (!SendCoinsFragment.this.paymentIntent.equalsAmount(paymentIntent))
+                    if (!SendCoinsFragment.this.bitcoinPayment.equalsAmount(bitcoinPayment))
                         reasons.append(reasons.length() == 0 ? "" : ", ").append("amount");
                     if (reasons.length() == 0)
                         reasons.append("unknown");
@@ -1303,7 +1303,7 @@ public final class SendCoinsFragment extends Fragment {
                 dialog.setNegativeButton(R.string.button_dismiss, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(final DialogInterface dialog, final int which) {
-                        if (!paymentIntent.hasOutputs())
+                        if (!bitcoinPayment.hasOutputs())
                             handleCancel();
                     }
                 });
@@ -1311,11 +1311,11 @@ public final class SendCoinsFragment extends Fragment {
             }
         };
 
-        if (!Bluetooth.isBluetoothUrl(paymentIntent.paymentRequestUrl))
+        if (!Bluetooth.isBluetoothUrl(bitcoinPayment.paymentRequestUrl))
             new RequestPaymentRequestTask.HttpRequestTask(backgroundHandler, callback, walletClient.httpUserAgent())
-                    .requestPaymentRequest(paymentIntent.paymentRequestUrl);
+                    .requestPaymentRequest(bitcoinPayment.paymentRequestUrl);
         else
             new RequestPaymentRequestTask.BluetoothRequestTask(backgroundHandler, callback, bluetoothAdapter)
-                    .requestPaymentRequest(paymentIntent.paymentRequestUrl);
+                    .requestPaymentRequest(bitcoinPayment.paymentRequestUrl);
     }
 }

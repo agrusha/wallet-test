@@ -23,7 +23,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import com.gowiper.wallet.data.PaymentIntent;
+import com.gowiper.wallet.data.BitcoinPayment;
 import de.schildbach.wallet.ui.AbstractBindServiceActivity;
 import de.schildbach.wallet.ui.HelpDialogFragment;
 import de.schildbach.wallet_test.R;
@@ -36,9 +36,9 @@ import javax.annotation.Nonnull;
 public final class SendCoinsActivity extends AbstractBindServiceActivity {
     public static final String INTENT_EXTRA_PAYMENT_INTENT = "payment_intent";
 
-    public static void start(final Context context, @Nonnull PaymentIntent paymentIntent) {
+    public static void start(final Context context, @Nonnull BitcoinPayment bitcoinPayment) {
         final Intent intent = new Intent(context, SendCoinsActivity.class);
-        intent.putExtra(INTENT_EXTRA_PAYMENT_INTENT, paymentIntent);
+        intent.putExtra(INTENT_EXTRA_PAYMENT_INTENT, bitcoinPayment);
         context.startActivity(intent);
     }
 

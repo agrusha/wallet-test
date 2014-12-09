@@ -33,8 +33,8 @@ import android.widget.SimpleCursorAdapter.ViewBinder;
 import android.widget.TextView;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.data.PaymentIntent;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import com.gowiper.wallet.data.BitcoinPayment;
+import com.gowiper.wallet.parser.StringInputParser;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.ui.util.BitmapFragment;
 import com.gowiper.wallet.util.Qr;
@@ -133,13 +133,13 @@ public final class SendingAddressesFragment extends FancyListFragment implements
 
             new StringInputParser(input) {
                 @Override
-                protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
+                protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
                     // workaround for "IllegalStateException: Can not perform this action after onSaveInstanceState"
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            if (paymentIntent.hasAddress())
-                                EditAddressBookEntryFragment.edit(getFragmentManager(), paymentIntent.getAddress().toString());
+                            if (bitcoinPayment.hasAddress())
+                                EditAddressBookEntryFragment.edit(getFragmentManager(), bitcoinPayment.getAddress().toString());
                             else
                                 dialog(activity, null, R.string.address_book_options_scan_title, R.string.address_book_options_scan_invalid);
                         }
@@ -284,7 +284,7 @@ public final class SendingAddressesFragment extends FancyListFragment implements
 
     private void handleSend(final String address) {
         try {
-            SendCoinsActivity.start(activity, PaymentIntent.fromAddress(address, null));
+            SendCoinsActivity.start(activity, BitcoinPayment.fromAddress(address, null));
         } catch (final AddressFormatException x) {
             // cannot happen, address was picked from address book
             throw new RuntimeException(x);

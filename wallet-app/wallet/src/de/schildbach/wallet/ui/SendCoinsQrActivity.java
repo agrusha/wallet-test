@@ -23,8 +23,8 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Bundle;
 import com.gowiper.wallet.WalletApplication;
-import com.gowiper.wallet.data.PaymentIntent;
-import de.schildbach.wallet.ui.InputParser.StringInputParser;
+import com.gowiper.wallet.data.BitcoinPayment;
+import com.gowiper.wallet.parser.StringInputParser;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.ui.send.SweepWalletActivity;
 import org.bitcoinj.core.DumpedPrivateKey;
@@ -53,8 +53,8 @@ public final class SendCoinsQrActivity extends Activity {
 
             new StringInputParser(input) {
                 @Override
-                protected void handlePaymentIntent(@Nonnull final PaymentIntent paymentIntent) {
-                    SendCoinsActivity.start(SendCoinsQrActivity.this, paymentIntent);
+                protected void handleBitcoinPayment(@Nonnull final BitcoinPayment bitcoinPayment) {
+                    SendCoinsActivity.start(SendCoinsQrActivity.this, bitcoinPayment);
 
                     SendCoinsQrActivity.this.finish();
                 }
