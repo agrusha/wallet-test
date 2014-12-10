@@ -737,13 +737,8 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private boolean isOutputsValid() {
-        if (bitcoinPayment.hasOutputs())
-            return true;
+        return bitcoinPayment.hasOutputs() || validatedAddress != null;
 
-        if (validatedAddress != null)
-            return true;
-
-        return false;
     }
 
     private boolean isAmountValid() {
@@ -751,10 +746,8 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private boolean isPasswordValid() {
-        if (!wallet.isEncrypted())
-            return true;
+        return !wallet.isEncrypted() || !privateKeyPasswordView.getText().toString().trim().isEmpty();
 
-        return !privateKeyPasswordView.getText().toString().trim().isEmpty();
     }
 
     private boolean everythingValid() {
@@ -804,129 +797,7 @@ public final class SendCoinsFragment extends Fragment {
         sendRequest.memo = bitcoinPayment.memo;
         sendRequest.aesKey = encryptionKey;
 
-        new SendCoinsOfflineTask(wallet, backgroundHandler) {
-            @Override
-            protected void onSuccess(final Transaction transaction) {
-                sentTransaction = transaction;
-
-                setState(State.SENDING);
-
-                sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
-
-                final Address refundAddress = bitcoinPayment.standard == BitcoinPayment.Standard.BIP70 ? wallet.freshAddress(KeyPurpose.REFUND) : null;
-                final Payment payment = PaymentProtocol.createPaymentMessage(Arrays.asList(new Transaction[]{sentTransaction}), finalAmount,
-                        refundAddress, null, bitcoinPayment.payeeData);
-
-                if (directPaymentEnableView.isChecked())
-                    directPay(payment);
-
-                walletClient.broadcastTransaction(sentTransaction);
-
-                final ComponentName callingActivity = activity.getCallingActivity();
-                if (callingActivity != null) {
-                    log.info("returning result to calling activity: {}", callingActivity.flattenToString());
-
-                    final Intent result = new Intent();
-                    BitcoinIntegration.transactionHashToResult(result, sentTransaction.getHashAsString());
-                    if (bitcoinPayment.standard == BitcoinPayment.Standard.BIP70)
-                        BitcoinIntegration.paymentToResult(result, payment.toByteArray());
-                    activity.setResult(Activity.RESULT_OK, result);
-                }
-            }
-
-            private void directPay(final Payment payment) {
-                final DirectPaymentTask.ResultCallback callback = new DirectPaymentTask.ResultCallback() {
-                    @Override
-                    public void onResult(final boolean ack) {
-                        directPaymentAck = ack;
-
-                        if (state == State.SENDING)
-                            setState(State.SENT);
-
-                        updateView();
-                    }
-
-                    @Override
-                    public void onFail(final Object... messageArgs) {
-                        final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_direct_payment_failed_title);
-                        dialog.setMessage(bitcoinPayment.paymentUrl + "\n" + getString(R.string.error_http, messageArgs) + "\n\n"
-                                + getString(R.string.send_coins_fragment_direct_payment_failed_msg));
-                        dialog.setPositiveButton(R.string.button_retry, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(final DialogInterface dialog, final int which) {
-                                directPay(payment);
-                            }
-                        });
-                        dialog.setNegativeButton(R.string.button_dismiss, null);
-                        dialog.show();
-                    }
-                };
-
-                if (bitcoinPayment.isHttpPaymentUrl()) {
-                    new DirectPaymentTask.HttpPaymentTask(backgroundHandler, callback, bitcoinPayment.paymentUrl, walletClient.httpUserAgent())
-                            .send(payment);
-                } else if (bitcoinPayment.isBluetoothPaymentUrl() && bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
-                    new DirectPaymentTask.BluetoothPaymentTask(backgroundHandler, callback, bluetoothAdapter,
-                            Bluetooth.getBluetoothMac(bitcoinPayment.paymentUrl)).send(payment);
-                }
-            }
-
-            @Override
-            protected void onInsufficientMoney(@Nonnull final Coin missing) {
-                setState(State.INPUT);
-
-                final Coin estimated = wallet.getBalance(BalanceType.ESTIMATED);
-                final Coin available = wallet.getBalance(BalanceType.AVAILABLE);
-                final Coin pending = estimated.subtract(available);
-
-                final MonetaryFormat btcFormat = config.getFormat();
-
-                final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_insufficient_money_title);
-                final StringBuilder msg = new StringBuilder();
-                msg.append(getString(R.string.send_coins_fragment_insufficient_money_msg1, btcFormat.format(missing)));
-                msg.append("\n\n");
-                if (pending.signum() > 0)
-                    msg.append(getString(R.string.send_coins_fragment_pending, btcFormat.format(pending))).append("\n\n");
-                msg.append(getString(R.string.send_coins_fragment_insufficient_money_msg2));
-                dialog.setMessage(msg);
-                dialog.setPositiveButton(R.string.send_coins_options_empty, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        handleEmpty();
-                    }
-                });
-                dialog.setNegativeButton(R.string.button_cancel, null);
-                dialog.show();
-            }
-
-            @Override
-            protected void onInvalidKey() {
-                setState(State.INPUT);
-
-                privateKeyBadPasswordView.setVisibility(View.VISIBLE);
-                privateKeyPasswordView.requestFocus();
-            }
-
-            @Override
-            protected void onEmptyWalletFailed() {
-                setState(State.INPUT);
-
-                final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_empty_wallet_failed_title);
-                dialog.setMessage(R.string.send_coins_fragment_hint_empty_wallet_failed);
-                dialog.setNeutralButton(R.string.button_dismiss, null);
-                dialog.show();
-            }
-
-            @Override
-            protected void onFailure(@Nonnull Exception exception) {
-                setState(State.FAILED);
-
-                final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_error_msg);
-                dialog.setMessage(exception.toString());
-                dialog.setNeutralButton(R.string.button_dismiss, null);
-                dialog.show();
-            }
-        }.sendCoinsOffline(sendRequest); // send asynchronously
+        new SendCoinsTask(wallet, backgroundHandler, finalAmount).sendCoinsOffline(sendRequest); // send asynchronously
     }
 
     private void handleScan() {
@@ -951,8 +822,9 @@ public final class SendCoinsFragment extends Fragment {
     private Runnable dryrunRunnable = new Runnable() {
         @Override
         public void run() {
-            if (state == State.INPUT)
+            if (state == State.INPUT) {
                 executeDryrun();
+            }
 
             updateView();
         }
@@ -1225,10 +1097,11 @@ public final class SendCoinsFragment extends Fragment {
                     receivingAddressView.setText(null);
                     amountCalculatorLink.setBtcAmount(bitcoinPayment.getAmount());
 
-                    if (bitcoinPayment.isBluetoothPaymentUrl())
+                    if (bitcoinPayment.isBluetoothPaymentUrl()) {
                         directPaymentEnableView.setChecked(bluetoothAdapter != null && bluetoothAdapter.isEnabled());
-                    else if (bitcoinPayment.isHttpPaymentUrl())
+                    } else if (bitcoinPayment.isHttpPaymentUrl()) {
                         directPaymentEnableView.setChecked(!Constants.BUG_OPENSSL_HEARTBLEED);
+                    }
 
                     requestFocusFirst();
                     updateView();
@@ -1237,12 +1110,13 @@ public final class SendCoinsFragment extends Fragment {
 
                 if (bitcoinPayment.hasPaymentRequestUrl()) {
                     if (bitcoinPayment.isBluetoothPaymentRequestUrl() && !Constants.BUG_OPENSSL_HEARTBLEED) {
-                        if (bluetoothAdapter.isEnabled())
+                        if (bluetoothAdapter.isEnabled()) {
                             requestPaymentRequest();
-                        else
+                        } else {
                             // ask for permission to enable bluetooth
                             startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
                                     REQUEST_CODE_ENABLE_BLUETOOTH_FOR_PAYMENT_REQUEST);
+                        }
                     } else if (bitcoinPayment.isHttpPaymentRequestUrl()) {
                         requestPaymentRequest();
                     }
@@ -1260,62 +1134,197 @@ public final class SendCoinsFragment extends Fragment {
 
         ProgressDialogFragment.showProgress(fragmentManager, getString(R.string.send_coins_fragment_request_payment_request_progress, host));
 
-        final RequestPaymentRequestTask.ResultCallback callback = new RequestPaymentRequestTask.ResultCallback() {
-            @Override
-            public void onPaymentIntent(final BitcoinPayment bitcoinPayment) {
-                ProgressDialogFragment.dismissProgress(fragmentManager);
+        final RequestPaymentResultCallback callback = new RequestPaymentResultCallback();
 
-                if (SendCoinsFragment.this.bitcoinPayment.isExtendedBy(bitcoinPayment)) {
-                    // success
-                    updateStateFrom(bitcoinPayment);
-                    updateView();
-                    handler.post(dryrunRunnable);
-                } else {
-                    final StringBuilder reasons = new StringBuilder();
-                    if (!SendCoinsFragment.this.bitcoinPayment.equalsAddress(bitcoinPayment))
-                        reasons.append("address");
-                    if (!SendCoinsFragment.this.bitcoinPayment.equalsAmount(bitcoinPayment))
-                        reasons.append(reasons.length() == 0 ? "" : ", ").append("amount");
-                    if (reasons.length() == 0)
-                        reasons.append("unknown");
-
-                    final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_request_payment_request_failed_title);
-                    dialog.setMessage(getString(R.string.send_coins_fragment_request_payment_request_wrong_signature) + "\n\n" + reasons);
-                    dialog.singleDismissButton(null);
-                    dialog.show();
-
-                    log.info("BIP72 trust check failed: {}", reasons);
-                }
-            }
-
-            @Override
-            public void onFail(final int messageResId, final Object... messageArgs) {
-                ProgressDialogFragment.dismissProgress(fragmentManager);
-
-                final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_request_payment_request_failed_title);
-                dialog.setMessage(getString(messageResId, messageArgs));
-                dialog.setPositiveButton(R.string.button_retry, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        requestPaymentRequest();
-                    }
-                });
-                dialog.setNegativeButton(R.string.button_dismiss, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        if (!bitcoinPayment.hasOutputs())
-                            handleCancel();
-                    }
-                });
-                dialog.show();
-            }
-        };
-
-        if (!Bluetooth.isBluetoothUrl(bitcoinPayment.paymentRequestUrl))
+        if (!Bluetooth.isBluetoothUrl(bitcoinPayment.paymentRequestUrl)) {
             new RequestPaymentRequestTask.HttpRequestTask(backgroundHandler, callback, walletClient.httpUserAgent())
                     .requestPaymentRequest(bitcoinPayment.paymentRequestUrl);
-        else
+        } else {
             new RequestPaymentRequestTask.BluetoothRequestTask(backgroundHandler, callback, bluetoothAdapter)
                     .requestPaymentRequest(bitcoinPayment.paymentRequestUrl);
+        }
+    }
+
+    private class RequestPaymentResultCallback implements RequestPaymentRequestTask.ResultCallback {
+        @Override
+        public void onPayment (final BitcoinPayment bitcoinPayment) {
+            ProgressDialogFragment.dismissProgress(fragmentManager);
+
+            if (SendCoinsFragment.this.bitcoinPayment.isExtendedBy(bitcoinPayment)) {
+                // success
+                updateStateFrom(bitcoinPayment);
+                updateView();
+                handler.post(dryrunRunnable);
+            } else {
+                final StringBuilder reasons = new StringBuilder();
+                if (!SendCoinsFragment.this.bitcoinPayment.equalsAddress(bitcoinPayment))
+                    reasons.append("address");
+                if (!SendCoinsFragment.this.bitcoinPayment.equalsAmount(bitcoinPayment))
+                    reasons.append(reasons.length() == 0 ? "" : ", ").append("amount");
+                if (reasons.length() == 0)
+                    reasons.append("unknown");
+
+                final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_request_payment_request_failed_title);
+                dialog.setMessage(getString(R.string.send_coins_fragment_request_payment_request_wrong_signature) + "\n\n" + reasons);
+                dialog.singleDismissButton(null);
+                dialog.show();
+
+                log.info("BIP72 trust check failed: {}", reasons);
+            }
+        }
+
+        @Override
+        public void onFail(final int messageResId, final Object... messageArgs) {
+            ProgressDialogFragment.dismissProgress(fragmentManager);
+
+            final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_request_payment_request_failed_title);
+            dialog.setMessage(getString(messageResId, messageArgs));
+            dialog.setPositiveButton(R.string.button_retry, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(final DialogInterface dialog, final int which) {
+                    requestPaymentRequest();
+                }
+            });
+            dialog.setNegativeButton(R.string.button_dismiss, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(final DialogInterface dialog, final int which) {
+                    if (!bitcoinPayment.hasOutputs())
+                        handleCancel();
+                }
+            });
+            dialog.show();
+        }
+    }
+
+    private class SendCoinsTask extends SendCoinsOfflineTask {
+        private final Coin finalAmount;
+        public SendCoinsTask(@Nonnull Wallet wallet, @Nonnull Handler backgroundHandler, final Coin finalAmount) {
+            super(wallet, backgroundHandler);
+            this.finalAmount = finalAmount;
+        }
+
+        @Override
+        protected void onSuccess(@Nonnull final Transaction transaction) {
+            sentTransaction = transaction;
+
+            setState(State.SENDING);
+
+            sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
+
+            final Address refundAddress = bitcoinPayment.standard == BitcoinPayment.Standard.BIP70 ? wallet.freshAddress(KeyPurpose.REFUND) : null;
+            final Payment payment = PaymentProtocol.createPaymentMessage(Arrays.asList(sentTransaction), finalAmount,
+                    refundAddress, null, bitcoinPayment.payeeData);
+
+            if (directPaymentEnableView.isChecked()) {
+                directPay(payment);
+            }
+
+            walletClient.broadcastTransaction(sentTransaction);
+
+            final ComponentName callingActivity = activity.getCallingActivity();
+            if (callingActivity != null) {
+                log.info("returning result to calling activity: {}", callingActivity.flattenToString());
+
+                final Intent result = new Intent();
+                BitcoinIntegration.transactionHashToResult(result, sentTransaction.getHashAsString());
+                if (bitcoinPayment.standard == BitcoinPayment.Standard.BIP70) {
+                    BitcoinIntegration.paymentToResult(result, payment.toByteArray());
+                }
+                activity.setResult(Activity.RESULT_OK, result);
+            }
+        }
+
+        private void directPay(final Payment payment) {
+            final DirectPaymentTask.ResultCallback callback = new DirectPaymentTask.ResultCallback() {
+                @Override
+                public void onResult(final boolean ack) {
+                    directPaymentAck = ack;
+
+                    if (state == State.SENDING)
+                        setState(State.SENT);
+
+                    updateView();
+                }
+
+                @Override
+                public void onFail(final Object... messageArgs) {
+                    final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_direct_payment_failed_title);
+                    dialog.setMessage(bitcoinPayment.paymentUrl + "\n" + getString(R.string.error_http, messageArgs) + "\n\n"
+                            + getString(R.string.send_coins_fragment_direct_payment_failed_msg));
+                    dialog.setPositiveButton(R.string.button_retry, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(final DialogInterface dialog, final int which) {
+                            directPay(payment);
+                        }
+                    });
+                    dialog.setNegativeButton(R.string.button_dismiss, null);
+                    dialog.show();
+                }
+            };
+
+            if (bitcoinPayment.isHttpPaymentUrl()) {
+                new DirectPaymentTask.HttpPaymentTask(backgroundHandler, callback, bitcoinPayment.paymentUrl, walletClient.httpUserAgent())
+                        .send(payment);
+            } else if (bitcoinPayment.isBluetoothPaymentUrl() && bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+                new DirectPaymentTask.BluetoothPaymentTask(backgroundHandler, callback, bluetoothAdapter,
+                        Bluetooth.getBluetoothMac(bitcoinPayment.paymentUrl)).send(payment);
+            }
+        }
+
+        @Override
+        protected void onInsufficientMoney(@Nonnull final Coin missing) {
+            setState(State.INPUT);
+
+            final Coin estimated = wallet.getBalance(BalanceType.ESTIMATED);
+            final Coin available = wallet.getBalance(BalanceType.AVAILABLE);
+            final Coin pending = estimated.subtract(available);
+
+            final MonetaryFormat btcFormat = config.getFormat();
+
+            final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_insufficient_money_title);
+            final StringBuilder msg = new StringBuilder();
+            msg.append(getString(R.string.send_coins_fragment_insufficient_money_msg1, btcFormat.format(missing)));
+            msg.append("\n\n");
+            if (pending.signum() > 0)
+                msg.append(getString(R.string.send_coins_fragment_pending, btcFormat.format(pending))).append("\n\n");
+            msg.append(getString(R.string.send_coins_fragment_insufficient_money_msg2));
+            dialog.setMessage(msg);
+            dialog.setPositiveButton(R.string.send_coins_options_empty, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(final DialogInterface dialog, final int which) {
+                    handleEmpty();
+                }
+            });
+            dialog.setNegativeButton(R.string.button_cancel, null);
+            dialog.show();
+        }
+
+        @Override
+        protected void onInvalidKey() {
+            setState(State.INPUT);
+
+            privateKeyBadPasswordView.setVisibility(View.VISIBLE);
+            privateKeyPasswordView.requestFocus();
+        }
+
+        @Override
+        protected void onEmptyWalletFailed() {
+            setState(State.INPUT);
+
+            final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_fragment_empty_wallet_failed_title);
+            dialog.setMessage(R.string.send_coins_fragment_hint_empty_wallet_failed);
+            dialog.setNeutralButton(R.string.button_dismiss, null);
+            dialog.show();
+        }
+
+        @Override
+        protected void onFailure(@Nonnull Exception exception) {
+            setState(State.FAILED);
+
+            final DialogBuilder dialog = DialogBuilder.warn(activity, R.string.send_coins_error_msg);
+            dialog.setMessage(exception.toString());
+            dialog.setNeutralButton(R.string.button_dismiss, null);
+            dialog.show();
+        }
     }
 }

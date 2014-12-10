@@ -54,7 +54,7 @@ public abstract class RequestPaymentRequestTask {
     private static final Logger log = LoggerFactory.getLogger(RequestPaymentRequestTask.class);
 
     public interface ResultCallback {
-        void onPaymentIntent(BitcoinPayment bitcoinPayment);
+        void onPayment(BitcoinPayment bitcoinPayment);
 
         void onFail(int messageResId, Object... messageArgs);
     }
@@ -247,7 +247,7 @@ public abstract class RequestPaymentRequestTask {
         callbackHandler.post(new Runnable() {
             @Override
             public void run() {
-                resultCallback.onPaymentIntent(bitcoinPayment);
+                resultCallback.onPayment(bitcoinPayment);
             }
         });
     }

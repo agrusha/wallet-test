@@ -33,6 +33,10 @@ public class BalanceWatcher implements Observable<BalanceWatcher>{
         return wallet.getBalance(Wallet.BalanceType.ESTIMATED);
     }
 
+    public Coin getAvailableBalance() {
+        return wallet.getBalance(Wallet.BalanceType.AVAILABLE);
+    }
+
     private class WalletBalanceChangeListener extends ThrottlingWalletChangeListener {
         @Override
         public void onThrottledWalletChanged() {
