@@ -31,6 +31,9 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.SimpleCursorAdapter.ViewBinder;
 import android.widget.TextView;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.data.BitcoinPayment;
@@ -131,31 +134,21 @@ public final class SendingAddressesFragment extends FancyListFragment implements
         if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK) {
             final String input = intent.getStringExtra(ScanActivity.INTENT_EXTRA_RESULT);
 
-            new StringInputParser(input) {
+            StringInputParser stringInputParser = new StringInputParser(input);
+
+            Futures.addCallback(stringInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
                 @Override
-                protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
-                    // workaround for "IllegalStateException: Can not perform this action after onSaveInstanceState"
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (bitcoinPayment.hasAddress())
-                                EditAddressBookEntryFragment.edit(getFragmentManager(), bitcoinPayment.getAddress().toString());
-                            else
-                                dialog(activity, null, R.string.address_book_options_scan_title, R.string.address_book_options_scan_invalid);
-                        }
-                    }, 500);
+                public void onSuccess(BitcoinPayment bitcoinPayment) {
+                    if (bitcoinPayment.hasAddress()) {
+                        EditAddressBookEntryFragment.edit(getFragmentManager(), bitcoinPayment.getAddress().toString());
+                    }
                 }
 
                 @Override
-                protected void handleDirectTransaction(final Transaction transaction) throws VerificationException {
-                    cannotClassify(input);
+                public void onFailure(Throwable t) {
+                   log.error("failed to get bitcoin payment from input ", t);
                 }
-
-                @Override
-                protected void error(final int messageResId, final Object... messageArgs) {
-                    dialog(activity, null, R.string.address_book_options_scan_title, messageResId, messageArgs);
-                }
-            }.parse();
+            }, activity.getWalletClient().getGuiThreadExecutor());
         }
     }
 

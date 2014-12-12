@@ -13,8 +13,9 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 
 @Slf4j
-public abstract class StringInputParser extends InputParser {
+public class StringInputParser extends InputParser {
     private final String input;
+
 
     public StringInputParser(@Nonnull final String input) {
         this.input = input;
@@ -28,17 +29,11 @@ public abstract class StringInputParser extends InputParser {
 
                 parseAndHandlePaymentRequest(serializedPaymentRequest);
             } catch (final IOException x) {
-                log.info("i/o error while fetching payment request", x);
-
-//                    error(R.string.input_parser_io_error, x.getMessage());
+                error(new Throwable("i/o error while fetching payment request", x));
             } catch (final PaymentProtocolException.PkiVerificationException x) {
-                log.info("got unverifyable payment request", x);
-
-//                    error(R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
+                error(new Throwable("got unverifyable payment request", x));
             } catch (final PaymentProtocolException x) {
-                log.info("got invalid payment request", x);
-
-//                    error(R.string.input_parser_invalid_paymentrequest, x.getMessage());
+                error(new Throwable("got invalid payment request", x));
             }
         } else if (input.startsWith("bitcoin:")) {
             try {
@@ -50,9 +45,7 @@ public abstract class StringInputParser extends InputParser {
 
                 handleBitcoinPayment(BitcoinPayment.fromBitcoinUri(bitcoinUri));
             } catch (final BitcoinURIParseException x) {
-                log.info("got invalid bitcoin uri: '" + input + "'", x);
-
-//                    error(R.string.input_parser_invalid_bitcoin_uri, input);
+                error(new Throwable("got invalid bitcoin uri: '" + input + "'", x));
             }
         } else if (PATTERN_BITCOIN_ADDRESS.matcher(input).matches()) {
             try {
@@ -60,9 +53,7 @@ public abstract class StringInputParser extends InputParser {
 
                 handleBitcoinPayment(BitcoinPayment.fromAddress(address, null));
             } catch (final AddressFormatException x) {
-                log.info("got invalid address", x);
-
-//                    error(R.string.input_parser_invalid_address);
+                error(new Throwable("got invalid address", x));
             }
         } else if (PATTERN_PRIVATE_KEY_UNCOMPRESSED.matcher(input).matches() || PATTERN_PRIVATE_KEY_COMPRESSED.matcher(input).matches()) {
             try {
@@ -70,9 +61,7 @@ public abstract class StringInputParser extends InputParser {
 
                 handlePrivateKey(key);
             } catch (final AddressFormatException x) {
-                log.info("got invalid address", x);
-
-//                    error(R.string.input_parser_invalid_address);
+                error(new Throwable("got invalid address", x));
             }
         } else if (PATTERN_TRANSACTION.matcher(input).matches()) {
             try {
@@ -80,13 +69,9 @@ public abstract class StringInputParser extends InputParser {
 
                 handleDirectTransaction(tx);
             } catch (final IOException x) {
-                log.info("i/o error while fetching transaction", x);
-
-//                    error(R.string.input_parser_invalid_transaction, x.getMessage());
+                error(new Throwable("i/o error while fetching transaction", x));
             } catch (final ProtocolException x) {
-                log.info("got invalid transaction", x);
-
-//                    error(R.string.input_parser_invalid_transaction, x.getMessage());
+                error(new Throwable("got invalid transaction", x));
             }
         } else {
             cannotClassify(input);

@@ -11,7 +11,7 @@ import org.bitcoinj.protocols.payments.PaymentProtocolException;
 import javax.annotation.Nonnull;
 
 @Slf4j
-public abstract class BinaryInputParser extends InputParser {
+public class BinaryInputParser extends InputParser {
     private final String inputType;
     private final byte[] input;
 
@@ -21,28 +21,22 @@ public abstract class BinaryInputParser extends InputParser {
     }
 
     @Override
-    public void parse() {
+    protected void parse() {
         if (Constants.MIMETYPE_TRANSACTION.equals(inputType)) {
             try {
                 final Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, input);
 
                 handleDirectTransaction(tx);
             } catch (final VerificationException x) {
-                log.info("got invalid transaction", x);
-
-//                    error(R.string.input_parser_invalid_transaction, x.getMessage());
+                error(new Throwable("got invalid transaction", x));
             }
         } else if (PaymentProtocol.MIMETYPE_PAYMENTREQUEST.equals(inputType)) {
             try {
                 parseAndHandlePaymentRequest(input);
             } catch (final PaymentProtocolException.PkiVerificationException x) {
-                log.info("got unverifyable payment request", x);
-
-//                    error(R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
+                error(new Throwable("got unverifyable payment request", x));
             } catch (final PaymentProtocolException x) {
-                log.info("got invalid payment request", x);
-
-//                    error(R.string.input_parser_invalid_paymentrequest, x.getMessage());
+                error(new Throwable("got invalid payment request", x));
             }
         } else {
             cannotClassify(inputType);

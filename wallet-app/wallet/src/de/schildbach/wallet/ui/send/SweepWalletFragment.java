@@ -18,17 +18,19 @@ import android.view.*;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
-import com.gowiper.wallet.data.BitcoinPayment;
-import com.gowiper.wallet.send.SendCoinsOfflineTask;
-import de.schildbach.wallet.ui.*;
 import com.gowiper.wallet.parser.StringInputParser;
+import com.gowiper.wallet.send.SendCoinsOfflineTask;
 import com.gowiper.wallet.util.MonetarySpannable;
 import com.gowiper.wallet.util.WalletUtils;
+import de.schildbach.wallet.ui.*;
 import de.schildbach.wallet_test.R;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Wallet.BalanceType;
 import org.bitcoinj.core.Wallet.SendRequest;
@@ -37,7 +39,6 @@ import org.bitcoinj.wallet.KeyChainGroup;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.bitcoinj.wallet.WalletTransaction.Pool;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 
@@ -45,6 +46,8 @@ import java.util.Collection;
  * @author Maximilian Keller
  * @author Andreas Schildbach
  */
+
+@Slf4j
 public class SweepWalletFragment extends Fragment {
     private AbstractBindServiceActivity activity;
     private WalletClient walletClient;
@@ -196,27 +199,30 @@ public class SweepWalletFragment extends Fragment {
             if (resultCode == Activity.RESULT_OK) {
                 final String input = intent.getStringExtra(ScanActivity.INTENT_EXTRA_RESULT);
 
-                new StringInputParser(input) {
+                StringInputParser stringInputParser = new StringInputParser(input); //{
+//
+//                    @Override
+//                    protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
+//                        cannotClassify(input);
+//                    }
+//
+//                    @Override
+//                    protected void handleDirectTransaction(final Transaction transaction) throws VerificationException {
+//                        cannotClassify(input);
+//                    }
+//                };
+
+                Futures.addCallback(stringInputParser.parseForPrivateKey(), new FutureCallback<DumpedPrivateKey>() {
                     @Override
-                    protected void handlePrivateKey(@Nonnull final DumpedPrivateKey key) {
+                    public void onSuccess(DumpedPrivateKey key) {
                         init(key.getKey());
                     }
 
                     @Override
-                    protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
-                        cannotClassify(input);
+                    public void onFailure(Throwable t) {
+                        log.error("Got an error trying to parse privateKey ", t);
                     }
-
-                    @Override
-                    protected void handleDirectTransaction(final Transaction transaction) throws VerificationException {
-                        cannotClassify(input);
-                    }
-
-                    @Override
-                    protected void error(final int messageResId, final Object... messageArgs) {
-                        dialog(activity, null, R.string.button_scan, messageResId, messageArgs);
-                    }
-                }.parse();
+                }, walletClient.getGuiThreadExecutor());
             }
         }
 

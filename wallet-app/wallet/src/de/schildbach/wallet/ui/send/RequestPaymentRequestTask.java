@@ -22,6 +22,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.Looper;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import com.gowiper.wallet.Constants;
@@ -106,19 +108,21 @@ public abstract class RequestPaymentRequestTask {
                         if (responseCode == HttpURLConnection.HTTP_OK) {
                             is = connection.getInputStream();
 
-                            new StreamInputParser(connection.getContentType(), is) {
+                            StreamInputParser streamInputParser = new StreamInputParser(connection.getContentType(), is);
+
+                            Futures.addCallback(streamInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
                                 @Override
-                                protected void handleBitcoinPayment(@Nonnull final BitcoinPayment bitcoinPayment) {
+                                public void onSuccess(@Nullable BitcoinPayment bitcoinPayment) {
                                     log.info("received {} via http", bitcoinPayment);
 
                                     onPaymentIntent(bitcoinPayment);
                                 }
 
                                 @Override
-                                protected void error(final int messageResId, final Object... messageArgs) {
-                                    onFail(messageResId, messageArgs);
+                                public void onFailure(Throwable t) {
+                                    log.error("failed to get payment data, ", t);
                                 }
-                            }.parse();
+                            });
                         } else {
                             final String responseMessage = connection.getResponseMessage();
 
@@ -189,19 +193,21 @@ public abstract class RequestPaymentRequestTask {
                         final int responseCode = cis.readInt32();
 
                         if (responseCode == 200) {
-                            new BinaryInputParser(PaymentProtocol.MIMETYPE_PAYMENTREQUEST, cis.readBytes().toByteArray()) {
+                            BinaryInputParser binaryInputParser = new BinaryInputParser(PaymentProtocol.MIMETYPE_PAYMENTREQUEST, cis.readBytes().toByteArray());
+
+                            Futures.addCallback(binaryInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
                                 @Override
-                                protected void handleBitcoinPayment(@Nonnull final BitcoinPayment bitcoinPayment) {
+                                public void onSuccess(@Nullable BitcoinPayment bitcoinPayment) {
                                     log.info("received {} via bluetooth", bitcoinPayment);
 
                                     onPaymentIntent(bitcoinPayment);
                                 }
 
                                 @Override
-                                protected void error(final int messageResId, final Object... messageArgs) {
-                                    onFail(messageResId, messageArgs);
+                                public void onFailure(Throwable t) {
+                                   log.error("Failed to get payment data ", t);
                                 }
-                            }.parse();
+                            });
                         } else {
                             log.info("got bluetooth error {}", responseCode);
 

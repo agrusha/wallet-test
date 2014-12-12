@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Slf4j
-public abstract class StreamInputParser extends InputParser {
+public class StreamInputParser extends InputParser {
     private final String inputType;
     private final InputStream is;
 
@@ -33,17 +33,11 @@ public abstract class StreamInputParser extends InputParser {
                 Io.copy(is, baos);
                 parseAndHandlePaymentRequest(baos.toByteArray());
             } catch (final IOException x) {
-                log.info("i/o error while fetching payment request", x);
-
-//                    error(R.string.input_parser_io_error, x.getMessage());
+                error(new Throwable("i/o error while fetching payment request", x));
             } catch (final PaymentProtocolException.PkiVerificationException x) {
-                log.info("got unverifyable payment request", x);
-
-//                    error(R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
+                error(new Throwable("got unverifyable payment request", x));
             } catch (final PaymentProtocolException x) {
-                log.info("got invalid payment request", x);
-
-//                    error(R.string.input_parser_invalid_paymentrequest, x.getMessage());
+                error(new Throwable("got invalid payment request", x));
             } finally {
                 try {
                     if (baos != null)

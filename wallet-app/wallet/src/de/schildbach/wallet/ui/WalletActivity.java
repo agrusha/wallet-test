@@ -46,6 +46,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import com.google.common.base.Charsets;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.gowiper.wallet.util.*;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
@@ -145,17 +147,19 @@ public final class WalletActivity extends AbstractWalletActivity {
             final NdefMessage ndefMessage = (NdefMessage) intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)[0];
             final byte[] input = Nfc.extractMimePayload(Constants.MIMETYPE_TRANSACTION, ndefMessage);
 
-            new BinaryInputParser(inputType, input) {
+            final BinaryInputParser binaryInputParser = new BinaryInputParser(inputType, input);
+
+            Futures.addCallback(binaryInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
                 @Override
-                protected void handleBitcoinPayment(final BitcoinPayment bitcoinPayment) {
-                    cannotClassify(inputType);
+                public void onSuccess(BitcoinPayment result) {
+                    binaryInputParser.cannotClassify(inputType);
                 }
 
                 @Override
-                protected void error(final int messageResId, final Object... messageArgs) {
-                    dialog(WalletActivity.this, null, 0, messageResId, messageArgs);
+                public void onFailure(Throwable t) {
+                    log.warn("got an error ", t);
                 }
-            }.parse();
+            });
         }
     }
 
@@ -178,11 +182,6 @@ public final class WalletActivity extends AbstractWalletActivity {
                 @Override
                 protected void handleDirectTransaction(final Transaction tx) throws VerificationException {
                     walletClient.processDirectTransaction(tx);
-                }
-
-                @Override
-                protected void error(final int messageResId, final Object... messageArgs) {
-                    dialog(WalletActivity.this, null, R.string.button_scan, messageResId, messageArgs);
                 }
             }.parse();
         }

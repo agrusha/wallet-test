@@ -18,8 +18,6 @@
 package de.schildbach.wallet.ui;
 
 import android.app.Activity;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Bundle;
 import com.gowiper.wallet.WalletApplication;
@@ -73,18 +71,6 @@ public final class SendCoinsQrActivity extends Activity {
 
                     SendCoinsQrActivity.this.finish();
                 }
-
-                @Override
-                protected void error(final int messageResId, final Object... messageArgs) {
-                    dialog(SendCoinsQrActivity.this, dismissListener, 0, messageResId, messageArgs);
-                }
-
-                private final OnClickListener dismissListener = new OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        SendCoinsQrActivity.this.finish();
-                    }
-                };
             }.parse();
         } else {
             finish();

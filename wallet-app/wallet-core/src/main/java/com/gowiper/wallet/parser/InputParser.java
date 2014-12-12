@@ -1,25 +1,10 @@
-/*
- * Copyright 2013-2014 the original author or authors.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 package com.gowiper.wallet.parser;
 
 import android.content.Context;
 import android.content.DialogInterface.OnClickListener;
 import com.google.common.hash.Hashing;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UninitializedMessageException;
 import com.gowiper.wallet.Constants;
@@ -43,11 +28,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Pattern;
 
-//import de.schildbach.wallet_test.R;
-
-/**
- * @author Andreas Schildbach
- */
 @Slf4j
 public abstract class InputParser {
 
@@ -60,13 +40,40 @@ public abstract class InputParser {
             + "[" + new String(Base58.ALPHABET) + "]{51}");
     public static final Pattern PATTERN_TRANSACTION = Pattern.compile("[0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$\\*\\+\\-\\.\\/\\:]{100,}");
 
-    public abstract void parse();
+    protected SettableFuture<BitcoinPayment> futurePayment = SettableFuture.create();
+    protected SettableFuture<DumpedPrivateKey> futurePrivateKey = SettableFuture.create();
+    protected SettableFuture<Transaction> futureTransaction = SettableFuture.create();
 
-    protected abstract void handleBitcoinPayment(@Nonnull BitcoinPayment bitcoinPayment);
+    protected abstract void parse();
 
-    protected abstract void handleDirectTransaction(@Nonnull Transaction transaction) throws VerificationException;
+    protected void error(Throwable throwable) {
+        futurePayment.setException(throwable);
+        futurePrivateKey.setException(throwable);
+        futureTransaction.setException(throwable);
+    }
 
-    protected abstract void error(int messageResId, Object... messageArgs);
+    public ListenableFuture<BitcoinPayment> parseForPayment() {
+        parse();
+        return futurePayment;
+    }
+
+    public ListenableFuture<DumpedPrivateKey> parseForPrivateKey() {
+        parse();
+        return futurePrivateKey;
+    }
+
+    public ListenableFuture<Transaction> parseForTransaction() {
+        parse();
+        return futureTransaction;
+    }
+
+    protected void handleBitcoinPayment(@Nonnull BitcoinPayment bitcoinPayment) {
+        futurePayment.set(bitcoinPayment);
+    }
+
+    protected void handleDirectTransaction(@Nonnull Transaction transaction) throws VerificationException {
+        futureTransaction.set(transaction);
+    }
 
     protected final void parseAndHandlePaymentRequest(@Nonnull final byte[] serializedPaymentRequest) throws PaymentProtocolException {
         final BitcoinPayment bitcoinPayment = parsePaymentRequest(serializedPaymentRequest);
@@ -138,13 +145,14 @@ public abstract class InputParser {
     }
 
     protected void handlePrivateKey(@Nonnull final DumpedPrivateKey key) {
-        final Address address = new Address(Constants.NETWORK_PARAMETERS, key.getKey().getPubKeyHash());
+        futurePrivateKey.set(key);
 
+        final Address address = new Address(Constants.NETWORK_PARAMETERS, key.getKey().getPubKeyHash());
         handleBitcoinPayment(BitcoinPayment.fromAddress(address, null));
     }
 
-    protected void cannotClassify(@Nonnull final String input) {
-//        error(R.string.input_parser_cannot_classify, input);
+    public void cannotClassify(@Nonnull final String input) {
+        error(new Throwable("Can not classify input ["+ input +']'));
     }
 
     protected void dialog(final Context context, @Nullable final OnClickListener dismissListener, final int titleResId, final int messageResId,
