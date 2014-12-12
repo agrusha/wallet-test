@@ -42,6 +42,7 @@ import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.widget.*;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.wallet.*;
@@ -49,11 +50,7 @@ import com.gowiper.wallet.data.AddressAndLabel;
 import com.gowiper.wallet.data.BitcoinPayment;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.offline.DirectPaymentTask;
-import com.gowiper.wallet.parser.BinaryInputParser;
-import com.gowiper.wallet.parser.StreamInputParser;
-import com.gowiper.wallet.parser.StringInputParser;
-import com.gowiper.wallet.send.SendCoinsBackgroundTask;
-import com.gowiper.wallet.send.SendCoinsOfflineTask;
+import com.gowiper.wallet.send.PaymentProvider;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.util.Bluetooth;
 import com.gowiper.wallet.util.Nfc;
@@ -68,7 +65,6 @@ import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
 import org.bitcoinj.core.Wallet.BalanceType;
 import org.bitcoinj.core.Wallet.CouldNotAdjustDownwards;
 import org.bitcoinj.core.Wallet.DustySendRequested;
-import org.bitcoinj.core.Wallet.SendRequest;
 import org.bitcoinj.crypto.KeyCrypterException;
 import org.bitcoinj.protocols.payments.PaymentProtocol;
 import org.bitcoinj.utils.MonetaryFormat;
@@ -123,6 +119,8 @@ public final class SendCoinsFragment extends Fragment {
 
     private State state = State.INPUT;
 
+    private PaymentProvider paymentProvider;
+    private boolean validatedAmount;
     private BitcoinPayment bitcoinPayment = null;
     private boolean priority = false;
     private AddressAndLabel validatedAddress = null;
@@ -130,7 +128,7 @@ public final class SendCoinsFragment extends Fragment {
     private Transaction sentTransaction = null;
     private Boolean directPaymentAck = null;
 
-    private Transaction dryrunTransaction;
+//    private Transaction dryrunTransaction;
     private Exception dryrunException;
 
     private static final int ID_RATE_LOADER = 0;
@@ -241,7 +239,7 @@ public final class SendCoinsFragment extends Fragment {
         @Override
         public void changed() {
             updateView();
-            handler.post(dryrunRunnable);
+            validateEnteredAmount();
         }
 
         @Override
@@ -449,6 +447,7 @@ public final class SendCoinsFragment extends Fragment {
             } else if (intent.hasExtra(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT)) {
                 initStateFromIntentExtras(intent.getExtras());
             } else {
+                paymentProvider = PaymentProvider.createFromBitcoinPayment(walletClient, BitcoinPayment.blank());
                 updateStateFrom(BitcoinPayment.blank());
             }
         }
@@ -567,7 +566,7 @@ public final class SendCoinsFragment extends Fragment {
         loaderManager.initLoader(ID_RECEIVING_ADDRESS_LOADER, null, receivingAddressLoaderCallbacks);
 
         updateView();
-        handler.post(dryrunRunnable);
+        validateEnteredAmount();
     }
 
     @Override
@@ -623,17 +622,19 @@ public final class SendCoinsFragment extends Fragment {
 
     private void restoreInstanceState(final Bundle savedInstanceState) {
         state = (State) savedInstanceState.getSerializable("state");
-
         bitcoinPayment = (BitcoinPayment) savedInstanceState.getParcelable("payment_intent");
+        paymentProvider = PaymentProvider.createFromBitcoinPayment(walletClient, bitcoinPayment);
         priority = savedInstanceState.getBoolean("priority");
+        paymentProvider.setHighPriority(priority);
         validatedAddress = savedInstanceState.getParcelable("validated_address");
 
         if (savedInstanceState.containsKey("sent_transaction_hash")) {
             sentTransaction = wallet.getTransaction((Sha256Hash) savedInstanceState.getSerializable("sent_transaction_hash"));
             sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
         }
-        if (savedInstanceState.containsKey("direct_payment_ack"))
+        if (savedInstanceState.containsKey("direct_payment_ack")) {
             directPaymentAck = savedInstanceState.getBoolean("direct_payment_ack");
+        }
     }
 
     @Override
@@ -651,12 +652,11 @@ public final class SendCoinsFragment extends Fragment {
             if (resultCode == Activity.RESULT_OK) {
                 final String input = intent.getStringExtra(ScanActivity.INTENT_EXTRA_RESULT);
 
-                StringInputParser stringInputParser = new StringInputParser(input);
-
-                Futures.addCallback(stringInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
+                Futures.addCallback(PaymentProvider.createFromURIString(walletClient, input), new FutureCallback<PaymentProvider>() {
                     @Override
-                    public void onSuccess(BitcoinPayment result) {
-                        updateStateFrom(result);
+                    public void onSuccess(PaymentProvider result) {
+                        paymentProvider = result;
+                        updateStateFrom(paymentProvider.getBitcoinPayment());
                     }
 
                     @Override
@@ -718,15 +718,12 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private void validateReceivingAddress() {
-        try {
-            final String addressStr = receivingAddressView.getText().toString().trim();
-            if (!addressStr.isEmpty() && Constants.NETWORK_PARAMETERS.equals(Address.getParametersFromAddress(addressStr))) {
-                final String label = AddressBookProvider.resolveLabel(activity, addressStr);
-                validatedAddress = new AddressAndLabel(Constants.NETWORK_PARAMETERS, addressStr, label);
-                receivingAddressView.setText(null);
-            }
-        } catch (final AddressFormatException x) {
-            // swallow
+        final String addressStr = receivingAddressView.getText().toString().trim();
+
+        Optional<AddressAndLabel> optionalAddress = paymentProvider.validateReceivingAddress(addressStr);
+        if (optionalAddress.isPresent()) {
+            validatedAddress = optionalAddress.get();
+            receivingAddressView.setText(null);
         }
     }
 
@@ -739,11 +736,10 @@ public final class SendCoinsFragment extends Fragment {
 
     private boolean isOutputsValid() {
         return bitcoinPayment.hasOutputs() || validatedAddress != null;
-
     }
 
     private boolean isAmountValid() {
-        return dryrunTransaction != null && dryrunException == null;
+        return validatedAmount;
     }
 
     private boolean isPasswordValid() {
@@ -756,67 +752,59 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private void requestFocusFirst() {
-        if (!isOutputsValid())
+        if (!isOutputsValid()) {
             receivingAddressView.requestFocus();
-        else if (!isAmountValid())
+        } else if (!isAmountValid()) {
             amountCalculatorLink.requestFocus();
-        else if (everythingValid())
+        } else if (everythingValid()) {
             viewGo.requestFocus();
-        else
+        } else {
             log.warn("unclear focus");
+        }
     }
 
     private void handleGo() {
         privateKeyBadPasswordView.setVisibility(View.INVISIBLE);
+        final String addressStr = validatedAddress.address.toString();
+        final Coin finalAmount = amountCalculatorLink.getAmount();
 
         if (wallet.isEncrypted()) {
             new DeriveKeyTask(backgroundHandler) {
                 @Override
                 protected void onSuccess(@Nonnull KeyParameter encryptionKey) {
-                    signAndSendPayment(encryptionKey);
+                    Futures.addCallback(paymentProvider.updateSignAndSend(finalAmount, addressStr, encryptionKey), new FutureCallback<Transaction>() {
+                        @Override
+                        public void onSuccess(Transaction result) {
+                            onTransactionSuccess(result);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            onTransactionFailure(t);
+                        }
+                    }, walletClient.getGuiThreadExecutor());
                 }
             }.deriveKey(wallet.getKeyCrypter(), privateKeyPasswordView.getText().toString().trim());
 
             setState(State.DECRYPTING);
         } else {
-            signAndSendPayment(null);
+            Futures.addCallback(paymentProvider.updateSignAndSend(finalAmount, addressStr, null), new FutureCallback<Transaction>() {
+                @Override
+                public void onSuccess(Transaction result) {
+                    onTransactionSuccess(result);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    onTransactionFailure(t);
+                }
+            });
         }
     }
 
-    private void signAndSendPayment(final KeyParameter encryptionKey) {
-        setState(State.SIGNING);
-
-        // final payment intent
-        final BitcoinPayment finalBitcoinPayment = bitcoinPayment.mergeWithEditedValues(amountCalculatorLink.getAmount(),
-                validatedAddress != null ? validatedAddress.address : null);
-        final Coin finalAmount = finalBitcoinPayment.getAmount();
-
-        // prepare send request
-        final SendRequest sendRequest = finalBitcoinPayment.toSendRequest();
-        sendRequest.emptyWallet = bitcoinPayment.mayEditAmount() && finalAmount.equals(wallet.getBalance(BalanceType.AVAILABLE));
-        sendRequest.feePerKb = priority ? SendRequest.DEFAULT_FEE_PER_KB.multiply(10) : SendRequest.DEFAULT_FEE_PER_KB;
-        sendRequest.memo = bitcoinPayment.memo;
-        sendRequest.aesKey = encryptionKey;
-
-        SendCoinsBackgroundTask sendCoinsBackgroundTask = new SendCoinsBackgroundTask(wallet, walletClient.getBackgroundExecutor());
-
-        Futures.addCallback(sendCoinsBackgroundTask.sendCoinsAsync(sendRequest), new FutureCallback<Transaction>() {
-            @Override
-            public void onSuccess(Transaction result) {
-                onTransactionSuccess(result, finalAmount);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                onTransactionFailure(t);
-            }
-        }, walletClient.getGuiThreadExecutor());
-
-    }
-
-    private void onTransactionSuccess(Transaction transaction, Coin finalAmount) {
+    private void onTransactionSuccess(Transaction transaction) {
         sentTransaction = transaction;
-
+        Coin finalAmount = paymentProvider.getBitcoinPayment().getAmount();
         setState(State.SENDING);
 
         sentTransaction.getConfidence().addEventListener(sentTransactionConfidenceListener);
@@ -957,9 +945,9 @@ public final class SendCoinsFragment extends Fragment {
 
     private void handlePriority() {
         priority = !priority;
-
+        paymentProvider.setHighPriority(priority);
         updateView();
-        handler.post(dryrunRunnable);
+        validateEnteredAmount();
     }
 
     private void handleEmpty() {
@@ -967,39 +955,26 @@ public final class SendCoinsFragment extends Fragment {
         amountCalculatorLink.setBtcAmount(available);
 
         updateView();
-        handler.post(dryrunRunnable);
+        validateEnteredAmount();
     }
 
-    private Runnable dryrunRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (state == State.INPUT) {
-                executeDryrun();
+    private void validateEnteredAmount() {
+        final Coin amount = amountCalculatorLink.getAmount();
+        Futures.addCallback(paymentProvider.validateAmount(amount), new FutureCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                validatedAmount = result.booleanValue();
+                updateView();
             }
 
-            updateView();
-        }
-
-        private void executeDryrun() {
-            dryrunTransaction = null;
-            dryrunException = null;
-
-            final Coin amount = amountCalculatorLink.getAmount();
-            if (amount != null) {
-                try {
-                    final Address dummy = wallet.currentReceiveAddress(); // won't be used, tx is never committed
-                    final SendRequest sendRequest = bitcoinPayment.mergeWithEditedValues(amount, dummy).toSendRequest();
-                    sendRequest.signInputs = false;
-                    sendRequest.emptyWallet = bitcoinPayment.mayEditAmount() && amount.equals(wallet.getBalance(BalanceType.AVAILABLE));
-                    sendRequest.feePerKb = priority ? SendRequest.DEFAULT_FEE_PER_KB.multiply(10) : SendRequest.DEFAULT_FEE_PER_KB;
-                    wallet.completeTx(sendRequest);
-                    dryrunTransaction = sendRequest.tx;
-                } catch (final Exception x) {
-                    dryrunException = x;
-                }
+            @Override
+            public void onFailure(Throwable t) {
+                validatedAmount = false;
+                dryrunException = (Exception) t;
+                updateView();
             }
-        }
-    };
+        }, walletClient.getGuiThreadExecutor());
+    }
 
     private void setState(final State state) {
         this.state = state;
@@ -1089,21 +1064,15 @@ public final class SendCoinsFragment extends Fragment {
                 } else if (dryrunException != null) {
                     hintView.setTextColor(getResources().getColor(R.color.fg_error));
                     hintView.setVisibility(View.VISIBLE);
-                    if (dryrunException instanceof DustySendRequested)
+                    if (dryrunException instanceof DustySendRequested) {
                         hintView.setText(getString(R.string.send_coins_fragment_hint_dusty_send));
-                    else if (dryrunException instanceof InsufficientMoneyException)
+                    } else if (dryrunException instanceof InsufficientMoneyException) {
                         hintView.setText(getString(R.string.send_coins_fragment_hint_insufficient_money,
                                 btcFormat.format(((InsufficientMoneyException) dryrunException).missing)));
-                    else if (dryrunException instanceof CouldNotAdjustDownwards)
+                    } else if (dryrunException instanceof CouldNotAdjustDownwards) {
                         hintView.setText(getString(R.string.send_coins_fragment_hint_empty_wallet_failed));
-                    else
+                    } else {
                         hintView.setText(dryrunException.toString());
-                } else if (dryrunTransaction != null) {
-                    final Coin previewFee = dryrunTransaction.getFee();
-                    if (previewFee != null) {
-                        hintView.setText(getString(R.string.send_coins_fragment_hint_fee, btcFormat.format(previewFee)));
-                        hintView.setTextColor(getResources().getColor(R.color.fg_insignificant));
-                        hintView.setVisibility(View.VISIBLE);
                     }
                 }
             }
@@ -1169,39 +1138,39 @@ public final class SendCoinsFragment extends Fragment {
     private void initStateFromIntentExtras(@Nonnull final Bundle extras) {
         final BitcoinPayment bitcoinPayment = extras.getParcelable(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT);
 
+        paymentProvider = PaymentProvider.createFromBitcoinPayment(walletClient, bitcoinPayment);
         updateStateFrom(bitcoinPayment);
     }
 
     private void initStateFromBitcoinUri(@Nonnull final Uri bitcoinUri) {
-        final String input = bitcoinUri.toString();
-
-        StringInputParser stringInputParser = new StringInputParser(input);
-
-        Futures.addCallback(stringInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
+        Futures.addCallback(PaymentProvider.createFromBitcoinURI(walletClient, bitcoinUri), new FutureCallback<PaymentProvider>() {
             @Override
-            public void onSuccess(BitcoinPayment result) {
-                updateStateFrom(bitcoinPayment);
+            public void onSuccess(PaymentProvider result) {
+                paymentProvider = result;
+                updateStateFrom(paymentProvider.getBitcoinPayment());
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.error("failed to get payment data ", t);
+                log.error("Failed to get payment data ", t);
+                updateStateFrom(BitcoinPayment.blank());
             }
-        });
+        }, walletClient.getGuiThreadExecutor());
     }
 
     private void initStateFromPaymentRequest(@Nonnull final String mimeType, @Nonnull final byte[] input) {
-        BinaryInputParser binaryInputParser = new BinaryInputParser(mimeType, input);
 
-        Futures.addCallback(binaryInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
+        Futures.addCallback(PaymentProvider.createFromPaymentRequest(walletClient, mimeType, input), new FutureCallback<PaymentProvider>() {
             @Override
-            public void onSuccess(BitcoinPayment result) {
-                updateStateFrom(result);
+            public void onSuccess(PaymentProvider result) {
+                paymentProvider = result;
+                updateStateFrom(paymentProvider.getBitcoinPayment());
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.error("Filed to get payment data ", t);
+                log.error("Failed to get payment data ", t);
+                updateStateFrom(BitcoinPayment.blank());
             }
         }, walletClient.getGuiThreadExecutor());
     }
@@ -1210,17 +1179,17 @@ public final class SendCoinsFragment extends Fragment {
         try {
             final InputStream is = contentResolver.openInputStream(bitcoinUri);
 
-            StreamInputParser streamInputParser = new StreamInputParser(mimeType, is);
-
-            Futures.addCallback(streamInputParser.parseForPayment(), new FutureCallback<BitcoinPayment>() {
+            Futures.addCallback(PaymentProvider.createFromStream(walletClient, mimeType, is), new FutureCallback<PaymentProvider>() {
                 @Override
-                public void onSuccess(BitcoinPayment result) {
-                    updateStateFrom(result);
+                public void onSuccess(PaymentProvider result) {
+                    paymentProvider = result;
+                    updateStateFrom(paymentProvider.getBitcoinPayment());
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
                     log.error("Failed to get payment data ", t);
+                    updateStateFrom(BitcoinPayment.blank());
                 }
             }, walletClient.getGuiThreadExecutor());
         } catch (final FileNotFoundException x) {
@@ -1252,7 +1221,7 @@ public final class SendCoinsFragment extends Fragment {
 
                     requestFocusFirst();
                     updateView();
-                    handler.post(dryrunRunnable);
+                    validateEnteredAmount();
                 }
 
                 if (bitcoinPayment.hasPaymentRequestUrl()) {
@@ -1301,7 +1270,7 @@ public final class SendCoinsFragment extends Fragment {
                 // success
                 updateStateFrom(bitcoinPayment);
                 updateView();
-                handler.post(dryrunRunnable);
+                validateEnteredAmount();
             } else {
                 final StringBuilder reasons = new StringBuilder();
                 if (!SendCoinsFragment.this.bitcoinPayment.equalsAddress(bitcoinPayment))
