@@ -3,10 +3,13 @@ package com.gowiper.wallet.controllers;
 import android.content.Context;
 import android.text.format.DateUtils;
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.util.Io;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.core.Utils;
@@ -22,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.io.*;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -29,14 +33,17 @@ public class WalletControllerImpl implements WalletController {
     private final File walletFile;
     private final Configuration configuration;
     private final BlockchainServiceController blockchainServiceController;
+    private final ListeningScheduledExecutorService backgroundExecutor;
     private final Context context;
 
     @Getter private Wallet wallet;
 
     public WalletControllerImpl(Context context, Configuration configuration,
+                                ListeningScheduledExecutorService backgroundExecutor,
                                 BlockchainServiceController blockchainServiceController) {
         this.configuration = configuration;
         this.context = context;
+        this.backgroundExecutor = backgroundExecutor;
         this.blockchainServiceController = blockchainServiceController;
         this.walletFile = context.getFileStreamPath(Constants.Files.WALLET_FILENAME_PROTOBUF);
         loadWalletFromProtobuf();
@@ -144,6 +151,26 @@ public class WalletControllerImpl implements WalletController {
         afterLoadWallet();
     }
 
+    @Override
+    public ListenableFuture<Void> setPinCode(String oldCode, String newCode) {
+        return backgroundExecutor.submit(new ChangePinCodeTask(oldCode, newCode));
+    }
+
+    private Void changePinCode(String oldCode, String newCode) {
+        if(wallet.isEncrypted()) {
+            if(StringUtils.isNotBlank(oldCode)) {
+                wallet.decrypt(oldCode);
+            } else {
+                throw new RuntimeException("Old PIN code is missing");
+            }
+        }
+
+        if(StringUtils.isNotBlank(newCode)) {
+            wallet.encrypt(newCode);
+        }
+        return com.gowiper.utils.Utils.VOID;
+    }
+
     private Wallet restoreWalletFromBackup() {
         InputStream inputStream = null;
 
@@ -240,6 +267,16 @@ public class WalletControllerImpl implements WalletController {
         @Override
         public void onAfterAutoSave(final File file) {
             allowWalletFileAccess();
+        }
+    }
+
+    @RequiredArgsConstructor
+    private class ChangePinCodeTask implements Callable<Void> {
+        private final String oldCode;
+        private final String newCode;
+        @Override
+        public Void call() throws Exception {
+            return changePinCode(oldCode, newCode);
         }
     }
 }

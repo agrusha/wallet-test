@@ -7,7 +7,6 @@ import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.service.BlockchainState;
 import lombok.Delegate;
 import lombok.Getter;
-import org.bitcoinj.core.Coin;
 
 import java.util.Map;
 

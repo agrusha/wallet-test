@@ -58,7 +58,8 @@ public class WalletClient {
         this.activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
         this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());
 
-        this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration, blockchainServiceController);
+        this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration,
+                backgroundExecutor, blockchainServiceController);
         this.transactionWatcher = new TransactionWatcher(this);
         this.balanceWatcher = new BalanceWatcher(this);
         this.blockchainManager = new BlockchainManagerImpl(this);
