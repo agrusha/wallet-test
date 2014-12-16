@@ -33,9 +33,9 @@ import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.controllers.BalanceWatcher;
 import com.gowiper.wallet.controllers.BlockchainServiceController;
 import com.gowiper.wallet.controllers.ExchangeRatesController;
+import com.gowiper.wallet.controllers.WalletUpdateController;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.service.BlockchainState;
@@ -60,7 +60,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
 
     private BlockchainServiceController blockchainServiceController;
     private ExchangeRatesController exchangeRatesController;
-    private BalanceWatcher balanceWatcher;
+    private WalletUpdateController walletUpdateController;
     private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
     private final BalanceUpdate balanceUpdate = new BalanceUpdate();
@@ -93,10 +93,10 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         this.config = walletClient.getConfiguration();
         this.blockchainServiceController = walletClient.getBlockchainServiceController();
         this.exchangeRatesController = walletClient.getExchangeRatesController();
-        this.balanceWatcher = walletClient.getBalanceWatcher();
+        this.walletUpdateController = walletClient.getWalletUpdateController();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
 
-        balance = balanceWatcher.getBalance();
+        balance = walletUpdateController.getBalance();
         showLocalBalance = getResources().getBoolean(R.bool.show_local_balance);
     }
 
@@ -143,7 +143,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         super.onResume();
 
         blockchainServiceController.addObserver(this);
-        balanceWatcher.addObserver(balanceUpdate);
+        walletUpdateController.addObserver(balanceUpdate);
         updateData();
         updateView();
     }
@@ -151,7 +151,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     @Override
     public void onPause() {
         blockchainServiceController.removeObserver(this);
-        balanceWatcher.removeObserver(balanceUpdate);
+        walletUpdateController.removeObserver(balanceUpdate);
         super.onPause();
     }
 
@@ -243,10 +243,10 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
         }
     }
 
-    private class BalanceUpdate implements Observer<BalanceWatcher> {
+    private class BalanceUpdate implements Observer<WalletUpdateController> {
         @Override
-        public void handleUpdate(BalanceWatcher updatedObject) {
-            balance = balanceWatcher.getBalance();
+        public void handleUpdate(WalletUpdateController updatedObject) {
+            balance = walletUpdateController.getBalance();
             guiThreadExecutor.execute(updateViewTask);
         }
     }

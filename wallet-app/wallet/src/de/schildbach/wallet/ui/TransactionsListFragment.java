@@ -36,8 +36,8 @@ import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
-import com.gowiper.wallet.controllers.TransactionWatcher;
-import com.gowiper.wallet.controllers.TransactionWatcher.Direction;
+import com.gowiper.wallet.controllers.WalletUpdateController.Direction;
+import com.gowiper.wallet.controllers.WalletUpdateController;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.util.GuiThreadExecutor;
 import com.gowiper.wallet.util.Qr;
@@ -57,12 +57,12 @@ import java.util.List;
 /**
  * @author Andreas Schildbach
  */
-public class TransactionsListFragment extends FancyListFragment implements Observer<TransactionWatcher> {
+public class TransactionsListFragment extends FancyListFragment implements Observer<WalletUpdateController> {
     private AbstractWalletActivity activity;
     private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
-    private TransactionWatcher transactionWatcher;
+    private WalletUpdateController walletUpdateController;
     private ContentResolver resolver;
     private TransactionsListAdapter adapter;
     private GuiThreadExecutor guiThreadExecutor;
@@ -99,7 +99,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.wallet = walletClient.getWallet();
-        this.transactionWatcher = walletClient.getTransactionWatcher();
+        this.walletUpdateController = walletClient.getWalletUpdateController();
         this.resolver = activity.getContentResolver();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
@@ -112,7 +112,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
 
         this.direction = (Direction) getArguments().getSerializable(KEY_DIRECTION);
 
-        final boolean showBackupWarning = direction == null || direction == TransactionWatcher.Direction.RECEIVED;
+        final boolean showBackupWarning = direction == null || direction == WalletUpdateController.Direction.RECEIVED;
 
         adapter = new TransactionsListAdapter(activity, wallet, walletClient.maxConnectedPeers(), showBackupWarning);
         setListAdapter(adapter);
@@ -124,7 +124,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
 
         resolver.registerContentObserver(AddressBookProvider.contentUri(activity.getPackageName()), true, addressBookObserver);
 
-        transactionWatcher.addObserver(this);
+        walletUpdateController.addObserver(this);
         loadTransactions();
 
         updateView();
@@ -133,7 +133,7 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
     @Override
     public void onPause() {
 
-        transactionWatcher.removeObserver(this);
+        walletUpdateController.removeObserver(this);
 
         resolver.unregisterContentObserver(addressBookObserver);
 
@@ -154,12 +154,12 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
     }
 
     @Override
-    public void handleUpdate(TransactionWatcher updatedObject) {
+    public void handleUpdate(WalletUpdateController updatedObject) {
         guiThreadExecutor.execute(updateViewTask);
     }
 
     private void loadTransactions() {
-        updateTransactions(transactionWatcher.getTransactions(direction));
+        updateTransactions(walletUpdateController.getTransactions(direction));
     }
 
     private void handleTransactionClick(@Nonnull final Transaction tx) {
@@ -277,10 +277,10 @@ public class TransactionsListFragment extends FancyListFragment implements Obser
         adapter.replace(newTransactionsList);
 
         final SpannableStringBuilder emptyText = new SpannableStringBuilder(
-                getString(direction == TransactionWatcher.Direction.SENT ? R.string.wallet_transactions_fragment_empty_text_sent
+                getString(direction == WalletUpdateController.Direction.SENT ? R.string.wallet_transactions_fragment_empty_text_sent
                         : R.string.wallet_transactions_fragment_empty_text_received));
         emptyText.setSpan(new StyleSpan(Typeface.BOLD), 0, emptyText.length(), SpannableStringBuilder.SPAN_POINT_MARK);
-        if (direction != TransactionWatcher.Direction.SENT) {
+        if (direction != WalletUpdateController.Direction.SENT) {
             emptyText.append("\n\n").append(getString(R.string.wallet_transactions_fragment_empty_text_howto));
         }
 

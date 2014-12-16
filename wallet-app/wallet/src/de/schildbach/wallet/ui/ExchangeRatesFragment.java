@@ -39,8 +39,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.*;
-import com.gowiper.wallet.controllers.BalanceWatcher;
 import com.gowiper.wallet.controllers.BlockchainServiceController;
+import com.gowiper.wallet.controllers.WalletUpdateController;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.service.BlockchainState;
 import com.gowiper.wallet.util.GuiThreadExecutor;
@@ -61,14 +61,13 @@ import javax.annotation.CheckForNull;
 public final class ExchangeRatesFragment extends FancyListFragment implements OnSharedPreferenceChangeListener,
         Observer<BlockchainServiceController> {
     private AbstractWalletActivity activity;
-    private WalletClient walletClient;
     private Configuration config;
     private Wallet wallet;
     private Uri contentUri;
     private LoaderManager loaderManager;
 
     private BlockchainServiceController blockchainServiceController;
-    private BalanceWatcher balanceWatcher;
+    private WalletUpdateController walletUpdateController;
     private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
     private final BlockchainStateUpdate blockchainStateUpdate = new BlockchainStateUpdate();
@@ -89,14 +88,14 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         super.onAttach(activity);
 
         this.activity = (AbstractWalletActivity) activity;
-        this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
+        WalletClient walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
         this.wallet = walletClient.getWallet();
         this.contentUri = ExchangeRatesProvider.contentUri(activity.getPackageName(), false);
         this.loaderManager = getLoaderManager();
 
         this.blockchainServiceController = walletClient.getBlockchainServiceController();
-        this.balanceWatcher = walletClient.getBalanceWatcher();
+        this.walletUpdateController = walletClient.getWalletUpdateController();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
 
@@ -234,7 +233,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     }
 
     private void updateView() {
-        balance = balanceWatcher.getBalance();
+        balance = walletUpdateController.getBalance();
 
         if (adapter != null) {
             final int btcShift = config.getBtcShift();

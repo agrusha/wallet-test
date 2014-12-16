@@ -38,8 +38,7 @@ public class WalletClient {
     @Getter private final BlockchainServiceController blockchainServiceController;
     @Getter private final ExchangeRatesController exchangeRatesController;
     private final WalletController walletController;
-    @Getter private final TransactionWatcher transactionWatcher;
-    @Getter private final BalanceWatcher balanceWatcher;
+    @Getter private final WalletUpdateController walletUpdateController;
     @Getter private final ListeningScheduledExecutorService backgroundExecutor;
     @Getter private final GuiThreadExecutor guiThreadExecutor;
     private PackageInfo packageInfo;
@@ -59,8 +58,7 @@ public class WalletClient {
         this.exchangeRatesController = new ExchangeRatesController(this);
         this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration,
                 backgroundExecutor, blockchainServiceController);
-        this.transactionWatcher = new TransactionWatcher(this);
-        this.balanceWatcher = new BalanceWatcher(this);
+        this.walletUpdateController = new WalletUpdateController(applicationContext, configuration, getWallet());
 
         this.configuration.updateLastVersionCode(packageInfo.versionCode);
     }
