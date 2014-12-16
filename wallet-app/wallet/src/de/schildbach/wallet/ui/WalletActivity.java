@@ -120,7 +120,7 @@ public final class WalletActivity extends AbstractWalletActivity {
             @Override
             public void run() {
                 // delayed start so that UI has enough time to initialize
-                getWalletClient().startBlockchainService(true);
+                getWalletClient().getBlockchainServiceController().startBlockchainService(true);
             }
         }, 1000);
 
@@ -788,7 +788,7 @@ public final class WalletActivity extends AbstractWalletActivity {
         dialog.setNeutralButton(R.string.button_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int id) {
-                getWalletClient().resetBlockchainService();
+                getWalletClient().getBlockchainServiceController().resetBlockchainService();
                 finish();
             }
         });

@@ -188,7 +188,7 @@ public final class RestoreWalletActivity extends AbstractWalletActivity {
         dialog.setNeutralButton(R.string.button_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int id) {
-                getWalletClient().resetBlockchainService();
+                getWalletClient().getBlockchainServiceController().resetBlockchainService();
                 finish();
             }
         });

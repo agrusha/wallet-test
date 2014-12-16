@@ -91,10 +91,10 @@ public final class SettingsFragment extends PreferenceFragment implements OnPref
                 if (preference.equals(btcPrecisionPreference)) {
                     WalletBalanceWidgetProvider.updateWidgets(activity, walletClient.getWallet());
                 } else if (preference.equals(trustedPeerPreference)) {
-                    walletClient.stopBlockchainService();
+                    walletClient.getBlockchainServiceController().stopBlockchainService();
                     updateTrustedPeer((String) newValue);
                 } else if (preference.equals(trustedPeerOnlyPreference)) {
-                    walletClient.stopBlockchainService();
+                    walletClient.getBlockchainServiceController().stopBlockchainService();
                 }
             }
         });

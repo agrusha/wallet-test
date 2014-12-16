@@ -40,7 +40,7 @@ import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.*;
 import com.gowiper.wallet.controllers.BalanceWatcher;
-import com.gowiper.wallet.controllers.BlockchainManager;
+import com.gowiper.wallet.controllers.BlockchainServiceController;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.service.BlockchainState;
 import com.gowiper.wallet.util.GuiThreadExecutor;
@@ -59,7 +59,7 @@ import javax.annotation.CheckForNull;
 
 @Slf4j
 public final class ExchangeRatesFragment extends FancyListFragment implements OnSharedPreferenceChangeListener,
-        Observer<BlockchainManager> {
+        Observer<BlockchainServiceController> {
     private AbstractWalletActivity activity;
     private WalletClient walletClient;
     private Configuration config;
@@ -67,7 +67,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     private Uri contentUri;
     private LoaderManager loaderManager;
 
-    private BlockchainManager blockchainManager;
+    private BlockchainServiceController blockchainServiceController;
     private BalanceWatcher balanceWatcher;
     private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
@@ -95,7 +95,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
         this.contentUri = ExchangeRatesProvider.contentUri(activity.getPackageName(), false);
         this.loaderManager = getLoaderManager();
 
-        this.blockchainManager = walletClient.getBlockchainManager();
+        this.blockchainServiceController = walletClient.getBlockchainServiceController();
         this.balanceWatcher = walletClient.getBalanceWatcher();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
     }
@@ -127,7 +127,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     public void onResume() {
         super.onResume();
 
-        blockchainManager.addObserver(this);
+        blockchainServiceController.addObserver(this);
 
         updateData();
         updateView();
@@ -135,7 +135,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
 
     @Override
     public void onPause() {
-        blockchainManager.removeObserver(this);
+        blockchainServiceController.removeObserver(this);
 
         super.onPause();
     }
@@ -246,7 +246,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     }
 
     private void updateData() {
-        Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
+        Futures.addCallback(blockchainServiceController.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
     }
 
     private final LoaderCallbacks<Cursor> rateLoaderCallbacks = new LoaderManager.LoaderCallbacks<Cursor>() {
@@ -290,7 +290,7 @@ public final class ExchangeRatesFragment extends FancyListFragment implements On
     };
 
     @Override
-    public void handleUpdate(BlockchainManager updatedObject) {
+    public void handleUpdate(BlockchainServiceController updatedObject) {
         updateData();
     }
 

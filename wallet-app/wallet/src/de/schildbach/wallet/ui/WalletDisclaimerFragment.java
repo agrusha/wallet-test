@@ -36,9 +36,9 @@ import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.WalletApplication;
+import com.gowiper.wallet.controllers.BlockchainServiceController;
 import com.gowiper.wallet.service.BlockchainState;
 import com.gowiper.wallet.service.BlockchainState.Impediment;
-import com.gowiper.wallet.controllers.BlockchainStateController;
 import de.schildbach.wallet_test.R;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,10 +50,10 @@ import java.util.Set;
  */
 
 @Slf4j
-public final class WalletDisclaimerFragment extends Fragment implements OnSharedPreferenceChangeListener, Observer<BlockchainStateController> {
+public final class WalletDisclaimerFragment extends Fragment implements OnSharedPreferenceChangeListener, Observer<BlockchainServiceController> {
     private WalletActivity activity;
     private Configuration config;
-    private BlockchainStateController blockchainStateController;
+    private BlockchainServiceController blockchainServiceController;
 
     private BlockchainStateUpdate blockchainStateUpdate = new BlockchainStateUpdate();
     private UpdateViewTask updateViewTask = new UpdateViewTask();
@@ -70,7 +70,7 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
         this.activity = (WalletActivity) activity;
         final WalletApplication application = (WalletApplication) activity.getApplication();
         this.config = application.getWalletClient().getConfiguration();
-        this.blockchainStateController = this.activity.getWalletClient().getBlockchainManager().getBlockchainStateController();
+        this.blockchainServiceController = this.activity.getWalletClient().getBlockchainServiceController();
     }
 
     @Override
@@ -97,7 +97,7 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
         super.onResume();
 
         config.registerOnSharedPreferenceChangeListener(this);
-        blockchainStateController.addObserver(this);
+        blockchainServiceController.addObserver(this);
 
         updateData();
         updateView();
@@ -105,7 +105,7 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
 
     @Override
     public void onPause() {
-        blockchainStateController.removeObserver(this);
+        blockchainServiceController.removeObserver(this);
         config.unregisterOnSharedPreferenceChangeListener(this);
 
         super.onPause();
@@ -160,11 +160,11 @@ public final class WalletDisclaimerFragment extends Fragment implements OnShared
     }
 
     private void updateData() {
-        Futures.addCallback(blockchainStateController.loadBlockchainState(), blockchainStateUpdate);
+        Futures.addCallback(blockchainServiceController.loadBlockchainState(), blockchainStateUpdate);
     }
 
     @Override
-    public void handleUpdate(BlockchainStateController updatedObject) {
+    public void handleUpdate(BlockchainServiceController updatedObject) {
         updateData();
     }
 

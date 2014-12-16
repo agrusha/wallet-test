@@ -17,7 +17,6 @@ import com.gowiper.wallet.service.BlockchainService;
 import com.gowiper.wallet.service.BlockchainServiceImpl;
 import com.gowiper.wallet.util.GuiThreadExecutor;
 import com.gowiper.wallet.util.LinuxSecureRandom;
-import lombok.Delegate;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Transaction;
@@ -36,11 +35,11 @@ public class WalletClient {
     @Getter private final Context applicationContext;
     private final ActivityManager activityManager;
     @Getter private final Configuration configuration;
-    @Delegate private final BlockchainServiceController blockchainServiceController;
+    @Getter private final BlockchainServiceController blockchainServiceController;
+    @Getter private final ExchangeRatesController exchangeRatesController;
     private final WalletController walletController;
     @Getter private final TransactionWatcher transactionWatcher;
     @Getter private final BalanceWatcher balanceWatcher;
-    @Getter private final BlockchainManager blockchainManager;
     @Getter private final ListeningScheduledExecutorService backgroundExecutor;
     @Getter private final GuiThreadExecutor guiThreadExecutor;
     private PackageInfo packageInfo;
@@ -56,13 +55,12 @@ public class WalletClient {
         this.guiThreadExecutor = GuiThreadExecutor.getInstance();
         this.configuration = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
         this.activityManager = (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
-        this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext());
-
+        this.blockchainServiceController = new BlockchainServiceControllerImpl(context.getApplicationContext(), backgroundExecutor);
+        this.exchangeRatesController = new ExchangeRatesController(this);
         this.walletController = new WalletControllerImpl(context.getApplicationContext(), configuration,
                 backgroundExecutor, blockchainServiceController);
         this.transactionWatcher = new TransactionWatcher(this);
         this.balanceWatcher = new BalanceWatcher(this);
-        this.blockchainManager = new BlockchainManagerImpl(this);
 
         this.configuration.updateLastVersionCode(packageInfo.versionCode);
     }

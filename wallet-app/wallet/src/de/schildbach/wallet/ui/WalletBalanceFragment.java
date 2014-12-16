@@ -34,11 +34,12 @@ import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
 import com.gowiper.wallet.controllers.BalanceWatcher;
+import com.gowiper.wallet.controllers.BlockchainServiceController;
+import com.gowiper.wallet.controllers.ExchangeRatesController;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.service.BlockchainState;
 import com.gowiper.wallet.util.GuiThreadExecutor;
-import com.gowiper.wallet.controllers.BlockchainManager;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import lombok.extern.slf4j.Slf4j;
@@ -53,11 +54,12 @@ import java.util.Map;
  */
 
 @Slf4j
-public final class WalletBalanceFragment extends Fragment implements Observer<BlockchainManager> {
+public final class WalletBalanceFragment extends Fragment implements Observer<BlockchainServiceController> {
     private WalletClient walletClient;
     private Configuration config;
 
-    private BlockchainManager blockchainManager;
+    private BlockchainServiceController blockchainServiceController;
+    private ExchangeRatesController exchangeRatesController;
     private BalanceWatcher balanceWatcher;
     private GuiThreadExecutor guiThreadExecutor;
     private final UpdateViewTask updateViewTask = new UpdateViewTask();
@@ -89,7 +91,8 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
 
         this.walletClient = ((WalletApplication) activity.getApplication()).getWalletClient();
         this.config = walletClient.getConfiguration();
-        this.blockchainManager = walletClient.getBlockchainManager();
+        this.blockchainServiceController = walletClient.getBlockchainServiceController();
+        this.exchangeRatesController = walletClient.getExchangeRatesController();
         this.balanceWatcher = walletClient.getBalanceWatcher();
         this.guiThreadExecutor = walletClient.getGuiThreadExecutor();
 
@@ -139,7 +142,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     public void onResume() {
         super.onResume();
 
-        blockchainManager.addObserver(this);
+        blockchainServiceController.addObserver(this);
         balanceWatcher.addObserver(balanceUpdate);
         updateData();
         updateView();
@@ -147,7 +150,7 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
 
     @Override
     public void onPause() {
-        blockchainManager.removeObserver(this);
+        blockchainServiceController.removeObserver(this);
         balanceWatcher.removeObserver(balanceUpdate);
         super.onPause();
     }
@@ -224,12 +227,12 @@ public final class WalletBalanceFragment extends Fragment implements Observer<Bl
     }
 
     private void updateData() {
-        Futures.addCallback(blockchainManager.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
-        Futures.addCallback(blockchainManager.loadExchangeRate(), exchangeRateUpdate, guiThreadExecutor);
+        Futures.addCallback(blockchainServiceController.loadBlockchainState(), blockchainStateUpdate, guiThreadExecutor);
+        Futures.addCallback(exchangeRatesController.loadExchangeRate(), exchangeRateUpdate, guiThreadExecutor);
     }
 
     @Override
-    public void handleUpdate(BlockchainManager updatedObject) {
+    public void handleUpdate(BlockchainServiceController updatedObject) {
         updateData();
     }
 

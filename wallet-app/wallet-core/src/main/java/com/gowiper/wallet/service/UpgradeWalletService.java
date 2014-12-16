@@ -67,7 +67,7 @@ public final class UpgradeWalletService extends IntentService {
             wallet.upgradeToDeterministic(null);
 
             // let other service pre-generate look-ahead keys
-            walletClient.startBlockchainService(false);
+            walletClient.getBlockchainServiceController().startBlockchainService(false);
         }
 
         maybeUpgradeToSecureChain(wallet);
@@ -78,7 +78,7 @@ public final class UpgradeWalletService extends IntentService {
             wallet.doMaintenance(null, false);
 
             // let other service pre-generate look-ahead keys
-            walletClient.startBlockchainService(false);
+            walletClient.getBlockchainServiceController().startBlockchainService(false);
         } catch (final Exception x) {
             log.error("failed doing wallet maintenance", x);
         }
