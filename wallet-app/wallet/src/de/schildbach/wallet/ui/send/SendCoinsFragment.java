@@ -798,7 +798,7 @@ public final class SendCoinsFragment extends Fragment {
                 public void onFailure(Throwable t) {
                     onTransactionFailure(t);
                 }
-            });
+            }, walletClient.getGuiThreadExecutor());
         }
     }
 
