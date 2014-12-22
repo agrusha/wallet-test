@@ -9,6 +9,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 import android.text.format.DateUtils;
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.gowiper.utils.SimpleThreadFactory;
@@ -42,6 +43,15 @@ public class WalletClient {
     @Getter private final ListeningScheduledExecutorService backgroundExecutor;
     @Getter private final GuiThreadExecutor guiThreadExecutor;
     private PackageInfo packageInfo;
+
+    private static Optional<WalletClient> instace = Optional.absent();
+
+    public static WalletClient getInstance(Context context) {
+        if (!instace.isPresent()) {
+            instace = Optional.of(new WalletClient(context));
+        }
+        return instace.get();
+    }
 
     public WalletClient(Context context) {
         this.applicationContext = context;

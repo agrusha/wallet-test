@@ -20,7 +20,6 @@ package com.gowiper.wallet.service;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Wallet;
@@ -53,7 +52,7 @@ public final class UpgradeWalletService extends IntentService {
     public void onCreate() {
         super.onCreate();
 
-        walletClient = ((WalletApplication) getApplication()).getWalletClient();
+        walletClient = WalletClient.getInstance(this.getApplicationContext());
     }
 
     @Override

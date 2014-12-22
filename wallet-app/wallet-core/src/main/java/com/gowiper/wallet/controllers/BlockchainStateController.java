@@ -7,7 +7,7 @@ import com.gowiper.utils.observers.Observable;
 import com.gowiper.utils.observers.ObservableDelegate;
 import com.gowiper.wallet.loaders.BlockchainStateLoader;
 import com.gowiper.wallet.service.BlockchainService;
-import com.gowiper.wallet.service.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState;
 import lombok.Delegate;
 
 public class BlockchainStateController implements Observable<BlockchainStateController>{

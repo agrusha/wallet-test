@@ -14,7 +14,8 @@ import android.os.PowerManager.WakeLock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
 import com.gowiper.wallet.*;
-import com.gowiper.wallet.service.BlockchainState.Impediment;
+import com.gowiper.wallet.data.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState.Impediment;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.util.ThrottlingWalletChangeListener;
 import com.gowiper.wallet.util.WalletUtils;
@@ -482,7 +483,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
         final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
 
-        walletCLient = ((WalletApplication) getApplication()).getWalletClient();
+        walletCLient = WalletClient.getInstance(this.getApplicationContext());
         config = walletCLient.getConfiguration();
         final Wallet wallet = walletCLient.getWallet();
 

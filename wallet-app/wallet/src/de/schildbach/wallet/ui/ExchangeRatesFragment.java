@@ -42,7 +42,7 @@ import com.gowiper.wallet.*;
 import com.gowiper.wallet.controllers.BlockchainServiceController;
 import com.gowiper.wallet.controllers.WalletUpdateController;
 import com.gowiper.wallet.data.ExchangeRate;
-import com.gowiper.wallet.service.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState;
 import com.gowiper.wallet.util.GuiThreadExecutor;
 import com.gowiper.wallet.util.WholeStringBuilder;
 import de.schildbach.wallet.ui.util.WalletBalanceWidgetProvider;

@@ -34,7 +34,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.gowiper.wallet.WalletApplication;
+import de.schildbach.wallet.ui.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet.ui.AbstractWalletActivity;
 import de.schildbach.wallet.ui.DialogBuilder;

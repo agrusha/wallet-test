@@ -35,7 +35,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import com.google.protobuf.ByteString;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.Wallet;

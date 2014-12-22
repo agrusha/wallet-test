@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.gowiper.wallet.service;
+package com.gowiper.wallet.data;
 
 import android.content.Intent;
 

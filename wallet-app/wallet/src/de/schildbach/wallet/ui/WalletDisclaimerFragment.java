@@ -35,10 +35,9 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.Configuration;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.controllers.BlockchainServiceController;
-import com.gowiper.wallet.service.BlockchainState;
-import com.gowiper.wallet.service.BlockchainState.Impediment;
+import com.gowiper.wallet.data.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState.Impediment;
 import de.schildbach.wallet_test.R;
 import lombok.extern.slf4j.Slf4j;
 

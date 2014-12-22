@@ -22,7 +22,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.WalletApplication;
+import de.schildbach.wallet.ui.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import com.gowiper.wallet.parser.StringInputParser;
 import com.gowiper.wallet.send.SendCoinsOfflineTask;

@@ -25,7 +25,7 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.WalletApplication;
+import de.schildbach.wallet.ui.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet.ui.DialogBuilder;
 import de.schildbach.wallet.ui.ReportIssueDialogBuilder;

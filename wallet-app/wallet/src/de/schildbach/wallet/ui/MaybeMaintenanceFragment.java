@@ -29,7 +29,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.gowiper.wallet.WalletClient;
 import com.gowiper.wallet.service.BlockchainService;
-import com.gowiper.wallet.service.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState;
 import de.schildbach.wallet.ui.send.MaintenanceDialogFragment;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;

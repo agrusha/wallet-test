@@ -2,7 +2,7 @@ package com.gowiper.wallet.loaders;
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.gowiper.wallet.service.BlockchainService;
-import com.gowiper.wallet.service.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState;
 
 public class BlockchainStateLoader extends AbstractLoader<BlockchainState> {
     private final BlockchainService service;

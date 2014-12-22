@@ -31,7 +31,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.RemoteViews;
 import com.gowiper.wallet.ExchangeRatesProvider;
-import com.gowiper.wallet.WalletApplication;
+import de.schildbach.wallet.ui.WalletApplication;
 import com.gowiper.wallet.data.ExchangeRate;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;

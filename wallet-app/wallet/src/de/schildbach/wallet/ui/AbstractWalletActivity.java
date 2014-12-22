@@ -22,7 +22,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import lombok.Getter;

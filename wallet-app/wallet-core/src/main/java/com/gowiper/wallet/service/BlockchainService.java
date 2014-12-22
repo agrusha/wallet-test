@@ -1,5 +1,6 @@
 package com.gowiper.wallet.service;
 
+import com.gowiper.wallet.data.BlockchainState;
 import org.bitcoinj.core.Peer;
 import org.bitcoinj.core.StoredBlock;
 

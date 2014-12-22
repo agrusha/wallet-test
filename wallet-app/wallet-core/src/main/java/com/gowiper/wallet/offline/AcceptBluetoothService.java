@@ -28,7 +28,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.text.format.DateUtils;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.VerificationException;
@@ -74,7 +73,7 @@ public final class AcceptBluetoothService extends Service {
 
         super.onCreate();
 
-        this.walletClient = ((WalletApplication) getApplication()).getWalletClient();
+        this.walletClient = WalletClient.getInstance(this.getApplicationContext());
         this.wallet = walletClient.getWallet();
 
         final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();

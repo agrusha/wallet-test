@@ -34,7 +34,6 @@ import android.widget.ListView;
 import com.gowiper.utils.observers.Observer;
 import com.gowiper.wallet.Configuration;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import com.gowiper.wallet.controllers.WalletUpdateController.Direction;
 import com.gowiper.wallet.controllers.WalletUpdateController;

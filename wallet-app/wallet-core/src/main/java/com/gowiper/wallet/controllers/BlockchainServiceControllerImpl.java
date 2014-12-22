@@ -12,9 +12,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.gowiper.utils.observers.ObservableDelegate;
 import com.gowiper.wallet.service.BlockchainService;
 import com.gowiper.wallet.service.BlockchainServiceImpl;
-import com.gowiper.wallet.service.BlockchainState;
+import com.gowiper.wallet.data.BlockchainState;
 import lombok.Delegate;
-import lombok.Getter;
 
 public class BlockchainServiceControllerImpl implements BlockchainServiceController {
     @Delegate

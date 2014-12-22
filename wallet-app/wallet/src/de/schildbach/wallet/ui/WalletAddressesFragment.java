@@ -29,7 +29,6 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import com.gowiper.wallet.util.AddressBookProvider;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet.ui.util.BitmapFragment;
 import com.gowiper.wallet.util.Qr;

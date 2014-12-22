@@ -20,7 +20,6 @@ package de.schildbach.wallet.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import com.gowiper.wallet.WalletApplication;
 import com.gowiper.wallet.data.BitcoinPayment;
 import com.gowiper.wallet.parser.StringInputParser;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;

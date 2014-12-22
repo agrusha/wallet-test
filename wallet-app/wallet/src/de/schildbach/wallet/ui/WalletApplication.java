@@ -1,7 +1,8 @@
-package com.gowiper.wallet;
+package de.schildbach.wallet.ui;
 
 import android.app.Application;
 import android.os.StrictMode;
+import com.gowiper.wallet.WalletClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,6 +18,6 @@ public class WalletApplication extends Application {
 
         super.onCreate();
 
-        walletClient = new WalletClient(this);
+        walletClient = WalletClient.getInstance(this);
     }
 }

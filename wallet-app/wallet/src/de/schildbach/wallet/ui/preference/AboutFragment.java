@@ -24,7 +24,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import com.gowiper.wallet.Constants;
-import com.gowiper.wallet.WalletApplication;
+import de.schildbach.wallet.ui.WalletApplication;
 import com.gowiper.wallet.WalletClient;
 import de.schildbach.wallet_test.R;
 import org.bitcoinj.core.VersionMessage;
